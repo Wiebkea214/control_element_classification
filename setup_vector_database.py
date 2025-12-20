@@ -5,20 +5,19 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 
 
-# Global content
-
+# Global:
 
 ######################################################
 
 # Function to create and persist vector store
-def edit_vector_db(docs, store_name, persistent_dir, embedding):
+def edit_vector_db(docs, store_name, persistent_dir, embedding_model):
 
     if not os.path.exists(persistent_dir):
         print(f"\n--- Creating vector db {store_name} ---")
 
         Chroma.from_documents(
             documents=docs,
-            embedding=embedding,
+            embedding=embedding_model,
             persist_directory=persistent_dir)
 
         print(f"--- Finished creating vector db {store_name} ---")
@@ -31,7 +30,7 @@ def edit_vector_db(docs, store_name, persistent_dir, embedding):
         collection = chroma_client.get_collection(name="langchain")
         # Access via LangChain (for adding)
         db = Chroma(
-            embedding_function=embedding,
+            embedding_function=embedding_model,
             persist_directory=persistent_dir)
 
         for doc in docs:

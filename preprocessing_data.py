@@ -55,6 +55,8 @@ def get_BMV(path_bmv):
     col_description1 = 'BENENNUNG2'
     col_description2 = 'BENENNUNG3'
     col_description3 = 'BENENNUNG4'
+    col_description4 = 'BENENNUNG5'
+    col_description5 = 'BENENNUNG6'
     col_cab = 'CAB'
     col_location = 'LOCATION'
 
@@ -75,6 +77,8 @@ def get_BMV(path_bmv):
         if key_id and val_type and val1 and val_loc:
             val2 = str(line[col_description2]).lower().strip()
             val3 = str(line[col_description3]).lower().strip()
+            val4 = str(line[col_description4]).lower().strip()
+            val5 = str(line[col_description5]).lower().strip()
             val_cab = str(line[col_cab]).lower().strip()
 
             ### write in dict ###
@@ -84,7 +88,7 @@ def get_BMV(path_bmv):
             ### write in sts_doc ###
             print(f"\n--- Writing bmv in Documents ---")
             docs_bmv.append(Document(
-                page_content=f"{key_id} is a {val_type} in {val_cab}. {val1}. {val2}. {val3}.",
+                page_content=f"{key_id} is a {val_type} in {val_cab}. {val1}. {val2}. {val3}. {val4}. {val5}.",
                 metadata={"id": key_id, "cab": val_cab, "location_num": int(val_loc)},
             ))
         else: pass

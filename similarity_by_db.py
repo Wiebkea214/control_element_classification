@@ -4,17 +4,17 @@ from langchain_chroma import Chroma
 
 ################################
 
-def calc_similarity(test_step, cab, persistent_dir, embedding):
+def calc_similarity(test_step, persistent_dir, embedding_model):
 
     # Load chroma db
     db = Chroma(
-        embedding_function=embedding,
+        embedding_function=embedding_model,
         persist_directory=persistent_dir)
 
     # Combine search string
-    input_txt = f"{test_step}. In cab {cab}."
+    input_txt = f"{test_step}."
 
     # Calculate top 3 similar results
-    top5 = db.similarity_search_with_relevance_scores(query=input_txt, k=3)
+    top5 = db.similarity_search_with_score(query=input_txt, k=3)
 
     return top5
