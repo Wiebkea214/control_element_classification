@@ -17,12 +17,12 @@ if __name__ == "__main__":
 #################### Interface (lvl1) #######################
 
     path_fts = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\TRAXX_AC3_ISR__Control_front_and_tail_lights.xlsx"
-    path_bmv_cab1 = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\BMV_Labels_cab1_top15.xlsx"
-    path_bmv_cab2 = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\BMV_Labels_cab2_top15.xlsx"
-    path_train = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\TRAXX_AC3_Training_cab1_top15_cnt50.xlsx"
-    dir_name = f"evaluation_cab1_50_top8"
+    path_bmv_cab1 = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\Labels\\BMV_Labels_cab1_top14.xlsx"
+    path_bmv_cab2 = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\Labels\\BMV_Labels_cab2_top14.xlsx"
+    path_train = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\Training\\TRAXX_AC3_Training_cab1_top7_cnt100.xlsx"
+    dir_name = f"evaluation_cab1_top5_7class_18feat_cnt100"
     eval_dir = str(os.path.join(os.path.join(os.path.dirname(os.path.abspath(__file__)), "Evaluation"), dir_name))
-    cab = 1
+    cab = "cab1"
 
 ####################### Globals #############################
 
@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
         if "similarity" in config:
             for id, test_step in dict_fts.items():
-                result = calc_similarity(test_step, cab, persistent_dir_cab1, embedding_model)
+                result = calc_similarity(test_step, persistent_dir_cab1, embedding_model)
 
                 # Write result in excel file
                 data = [id, test_step, result[0][0], result[1][0], result[2][0], result[0][1], result[1][1], result[2][1]]
@@ -78,7 +78,6 @@ if __name__ == "__main__":
 
     if "train_svm" in config:
         txt = []
-        cab = "cab1"
         x, y, y_sts, sts_time, sts_mem = get_traindata(path_train,[persistent_dir_cab1, persistent_dir_cab2], embedding_model, cab)
         svm_acc, report, train_time, pred_time, mem_train, mem_pred = train_svm(x, y, cab, eval_dir)
         txt.append("SVM:\n"

@@ -1,0 +1,24 @@
+SVM:
+acc: 0.436
+train time: 97.01 ms
+train RAM: 0.22 MB
+inference time: 8.41 ms
+inference RAM: 0.06 MB
+report:              precision    recall  f1-score   support
+
+     -GC.S01       0.20      0.10      0.13        20
+     -GC.S03       0.36      0.65      0.46        20
+     -HC.S01       0.33      0.15      0.21        20
+     -HC.S03       0.24      0.20      0.22        20
+ -TD.A21-A01       0.39      0.35      0.37        20
+ -TD.A23-A01       0.42      0.65      0.51        20
+ -TD.A23-S02       1.00      0.95      0.97        20
+
+    accuracy                           0.44       140
+   macro avg       0.42      0.44      0.41       140
+weighted avg       0.42      0.44      0.41       140
+
+STS:
+acc: 0.644
+average time: 99.35 ms
+average RAM: 0.14 MB

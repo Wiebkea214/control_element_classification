@@ -71,14 +71,35 @@ def get_traindata(path_train, persistent_dir, embedding, cab_train):
         sts_mem.append(mem_sts_before - mem_sts_after)
 
         features = []
+        sts_all = []
+        cosine_all = []
+        last_sts = 0
+        sts_diff = 0
+
         if found:
             for sts_candidate, sts_score in candidates_top5:
-                sts_id = sts_candidate.metadata["id"]
                 sts_emb = embedding.embed_query(str(sts_candidate.page_content))
                 cosine_score = cosine_similarity([text_emb], [sts_emb])[0][0]
+                cosine_scaled = (cosine_score + 1)/2
+                if last_sts:
+                    sts_diff = sts_score - last_sts
+                else:
+                    last_sts = sts_score
 
-                features.append(sts_score)
-                features.append(cosine_score)
+                if sts_diff:
+                    features.append(sts_diff)
+                else:
+                    pass
+
+                features.extend([sts_score, cosine_scaled])
+                sts_all.append(sts_score)
+                cosine_all.append(cosine_scaled)
+
+            mean_sts = np.mean(sts_all, axis=0)
+            mean_cos = np.mean(cosine_all, axis=0)
+            var_sts = np.var(sts_all, axis=0)
+            var_cos = np.var(cosine_all, axis=0)
+            features.extend([mean_sts, mean_cos, var_sts, var_cos])
 
             top1 = candidates_top5[0][0]
             y_sts.append(top1.metadata["id"])
@@ -101,10 +122,13 @@ def train_svm(x, y, cab, eval_dir):
 
     # Split training and test data
     x_train, x_test, y_train_str, y_test_str = train_test_split(
-        x, y, test_size=0.2, random_state=42)
+        x, y, test_size=0.2, random_state=42, stratify=y)
 
-    y_test_num = encoder.fit_transform(y_test_str)
-    y_train_num = encoder.fit_transform(y_train_str)
+    encoder.fit(y_train_str)
+    y_test_num = encoder.transform(y_test_str)
+    y_train_num = encoder.transform(y_train_str)
+
+    print("y_train_str: " + str(np.unique(y_train_str, return_counts=True)) + "\ny_train_num: " + str(np.unique(y_train_num, return_counts=True)))
 
     # SVM setup (RBF-Kernel is standard)
     svm = SVC(kernel="rbf", probability=True)
