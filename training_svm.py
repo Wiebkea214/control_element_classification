@@ -14,10 +14,10 @@ import time
 from datetime import datetime
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.svm import SVC
-from sklearn.model_selection import train_test_split, learning_curve
+from sklearn.model_selection import train_test_split, learning_curve, cross_val_score
 from sklearn.metrics import classification_report, accuracy_score
 from sklearn.preprocessing import LabelEncoder
-
+from sklearn.inspection import permutation_importance
 
 ###########################################################################
 
@@ -131,7 +131,41 @@ def train_svm(x, y, cab, eval_dir):
     print("y_train_str: " + str(np.unique(y_train_str, return_counts=True)) + "\ny_train_num: " + str(np.unique(y_train_num, return_counts=True)))
 
     # SVM setup (RBF-Kernel is standard)
-    svm = SVC(kernel="rbf", probability=True)
+    svm = SVC(kernel="rbf", probability=True, random_state=42)
+
+    # Training
+    svm.fit(x_train, y_train_str)
+
+    # Save model
+    joblib.dump(svm, f"svm_model_{time_now}.joblib")
+    print("\n--- Finished training and saving of SVM ---")
+
+    # Prediction with test data
+    print("\n--- Start evaluation of model with test data ---")
+    y_score = svm.decision_function(x_test)
+    y_pred = np.argmax(y_score, axis=1)
+
+    report = classification_report(y_test_num, y_pred, zero_division=0, target_names=encoder.classes_)
+    print(report)
+
+
+def evaluate_svm(x, y, cab, eval_dir):
+    print("\n--- Start training of SVM ---")
+    encoder = LabelEncoder()
+    time_now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+    # Split training and test data
+    x_train, x_test, y_train_str, y_test_str = train_test_split(
+        x, y, test_size=0.2, random_state=42, stratify=y)
+
+    encoder.fit(y_train_str)
+    y_test_num = encoder.transform(y_test_str)
+    y_train_num = encoder.transform(y_train_str)
+
+    print("y_train_str: " + str(np.unique(y_train_str, return_counts=True)) + "\ny_train_num: " + str(np.unique(y_train_num, return_counts=True)))
+
+    # SVM setup (RBF-Kernel is standard)
+    svm = SVC(kernel="rbf", probability=True, random_state=42)
 
     ############# Set preconditions for time and load analysis ##################
     process = psutil.Process()
@@ -158,7 +192,6 @@ def train_svm(x, y, cab, eval_dir):
     mem_train_after = process.memory_info().rss / (1024 * 1024)
     #############################################################################
 
-    joblib.dump(svm, f"svm_model_{time_now}.joblib")
     print("\n--- Finished training of SVM ---")
 
     ############# Set preconditions for inference analysis ######################
@@ -193,10 +226,12 @@ def train_svm(x, y, cab, eval_dir):
         os.makedirs(eval_dir)
 
     ### Perform evaluation SVM
+    cross_val = np.mean(cross_val_score(svm, x_train, y_train_str, cv=5))
+    r = permutation_importance(svm, x_train, y_train_str, n_repeats=30, random_state=0)
     analysis_cpu_usage(interval, train_start, train_end, pred_start, pred_end, cpu_start, cpu_usage, timestamps, eval_dir)
     analysis_performance(y_test_num, y_pred, encoder, eval_dir)
     analysis_conf_matrix(y_test_num, y_pred, encoder, eval_dir, "confusion_matrix_svm.png")
     analysis_learning(train_sizes, train_scores, test_scores, eval_dir)
     ###################################################################################
 
-    return acc, report, train_time, pred_time, mem_train, mem_pred
+    return acc, report, train_time, pred_time, mem_train, mem_pred, cross_val

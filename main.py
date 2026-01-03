@@ -79,27 +79,31 @@ if __name__ == "__main__":
     if "train_svm" in config:
         txt = []
         x, y, y_sts, sts_time, sts_mem = get_traindata(path_train,[persistent_dir_cab1, persistent_dir_cab2], embedding_model, cab)
-        svm_acc, report, train_time, pred_time, mem_train, mem_pred = train_svm(x, y, cab, eval_dir)
-        txt.append("SVM:\n"
-                "acc: " + str(round(svm_acc, 3)) +
-                "\ntrain time: " + str(round(train_time * 1000, 2)) + " ms"
-                "\ntrain RAM: " + str(round(mem_train, 2)) + " MB"
-                "\ninference time: " + str(round(pred_time * 1000, 2)) + " ms"
-                "\ninference RAM: " + str(round(mem_pred, 2)) + " MB"
-                "\nreport:" + report)
+        train_svm(x, y, cab, eval_dir)
 
-        # STS Analysis
-        analysis_conf_matrix(y, y_sts, encoder=0, path_dir=eval_dir, filename="confusion_matrix_sts.png")
-        avg_time = sum(sts_time) / len(sts_time)
-        avg_mem = sum(sts_mem) / len(sts_mem)
-        sts_acc = accuracy_score(y, y_sts)
-        txt.append(f"STS:\n"
-              "acc: " + str(round(sts_acc, 3)) +
-              "\naverage time: " + str(round(avg_time*1000, 2)) + " ms"
-              "\naverage RAM: " + str(round(avg_mem, 2)) + " MB")
+        if "evaluate" in config:
+            svm_acc, report, train_time, pred_time, mem_train, mem_pred, cross_val = evaluate_svm(x, y, cab, eval_dir)
+            txt.append("SVM:\n"
+                    "cross validation score: " + str(cross_val) +
+                    "acc: " + str(round(svm_acc, 3)) +
+                    "\ntrain time: " + str(round(train_time * 1000, 2)) + " ms"
+                    "\ntrain RAM: " + str(round(mem_train, 2)) + " MB"
+                    "\ninference time: " + str(round(pred_time * 1000, 2)) + " ms"
+                    "\ninference RAM: " + str(round(mem_pred, 2)) + " MB"
+                    "\nreport:" + report)
 
-        with open(os.path.join(eval_dir, "evaluation_log.txt"), "w", encoding="utf-8") as f:
-            f.write("\n".join(txt))
-        print(txt)
+            # STS Analysis
+            analysis_conf_matrix(y, y_sts, encoder=0, path_dir=eval_dir, filename="confusion_matrix_sts.png")
+            avg_time = sum(sts_time) / len(sts_time)
+            avg_mem = sum(sts_mem) / len(sts_mem)
+            sts_acc = accuracy_score(y, y_sts)
+            txt.append(f"STS:\n"
+                  "acc: " + str(round(sts_acc, 3)) +
+                  "\naverage time: " + str(round(avg_time*1000, 2)) + " ms"
+                  "\naverage RAM: " + str(round(avg_mem, 2)) + " MB")
+
+            with open(os.path.join(eval_dir, "evaluation_log.txt"), "w", encoding="utf-8") as f:
+                f.write("\n".join(txt))
+            print(txt)
 
     print("--- Finished ---")
