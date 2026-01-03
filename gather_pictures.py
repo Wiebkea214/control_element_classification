@@ -7,13 +7,10 @@ from typing import List, Optional, Tuple
 import matplotlib.pyplot as plt
 from PIL import Image
 
-############################## Globals #############################################
-
-
 
 ####################################################################################
-def find_images_with_same_name(root_dir, filename, recursive = True, sort_by = "folder") -> List[Path]:
 
+def find_images_with_same_name(root_dir, filename, recursive = True, sort_by = "folder") -> List[Path]:
     matches: List[Path] = []
     if recursive:
         for p in root_dir.rglob(filename):
@@ -34,7 +31,6 @@ def find_images_with_same_name(root_dir, filename, recursive = True, sort_by = "
 
 
 def compute_grid(n: int) -> Tuple[int, int]:
-
     if n <= 0:
         return (0, 0)
     cols = math.ceil(math.sqrt(n))
@@ -43,7 +39,6 @@ def compute_grid(n: int) -> Tuple[int, int]:
 
 
 def open_and_maybe_resize(img_path: Path, max_size: Optional[Tuple[int, int]] = None) -> Image.Image:
-
     im = Image.open(img_path).convert("RGB")
     if max_size:
         im.thumbnail(max_size, Image.Resampling.LANCZOS)
@@ -57,8 +52,7 @@ def show_images_in_one_figure(
     max_image_size: Optional[Tuple[int, int]] = (1200, 1200),
     tight_layout: bool = True,
     dpi: int = 200,
-    save_path: Optional[Path] = None,
-):
+    save_path: Optional[Path] = None):
 
     n = len(image_paths)
     if n == 0:
@@ -66,8 +60,8 @@ def show_images_in_one_figure(
 
     rows, cols = compute_grid(n)
 
-    # Abbildung erstellen – Größe dynamisch anpassen
-    # Faustregel: pro Spalte ~4 inch Breite, pro Zeile ~3.5 inch Höhe
+    # adapt size automatically
+    # per column ~4 inch width, per line ~3.5 inch height
     fig_w = max(6, 4 * cols)
     fig_h = max(4, 3.5 * rows)
     fig, axes = plt.subplots(rows, cols, figsize=(fig_w, fig_h), dpi=dpi)
@@ -88,14 +82,13 @@ def show_images_in_one_figure(
             if caption_mode == "folder":
                 caption = img_path.parent.name
             elif caption_mode == "parent_path":
-                # relativen Pfad zur root anzeigen (falls sinnvoll)
                 caption = str(img_path.parent)
             else:
-                caption = img_path.parent.name  # Fallback
+                caption = img_path.parent.name
 
             ax.set_title(caption, fontsize=10)
         else:
-            # leere Zellen ausblenden
+            # not show empty cells
             ax.axis("off")
 
     if tight_layout:
@@ -105,29 +98,18 @@ def show_images_in_one_figure(
         save_path = Path(save_path)
         save_path.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(save_path, dpi=dpi)
-        print(f"Gesamtabbild gespeichert unter: {save_path}")
+        print(f"Summary pics saved under: {save_path}")
 
     plt.show()
 
 
-if __name__ == "__main__":
-    root = str(os.path.join(os.path.dirname(os.path.abspath(__file__)), "Evaluation"))
+def gather_pictures():
+    root = Path(os.path.join(os.path.dirname(os.path.abspath(__file__)), "Evaluation"))
     filenames = ["confusion_matrix_sts.png", "confusion_matrix_svm.png", "cpu_usage.png", "learning_curve.png", "performance.png"]
 
     for filename in filenames:
-        paths = find_images_with_same_name(
-            root_dir=root,
-            filename=filename,
-            recursive=True,
-            sort_by="folder",
-        )
+        paths = find_images_with_same_name(root_dir=root, filename=filename, recursive=True, sort_by="folder")
 
-        show_images_in_one_figure(
-            image_paths=paths,
-            title=f"Comparison: {filename}",
-            caption_mode="folder",
-            max_image_size=(1200, 1200),
-            tight_layout=True,
-            dpi=200,
-            save_path=root / "vergleich_bilder.png",
-        )
+        show_images_in_one_figure(image_paths=paths, title=f"Comparison: {filename}", caption_mode="folder",
+                                  max_image_size=(1200, 1200), tight_layout=True, dpi=200,
+                                  save_path=root / f"vergleich_bilder_{filename}.png")

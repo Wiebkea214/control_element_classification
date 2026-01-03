@@ -4,9 +4,11 @@ from similarity_by_db import *
 from write_data_in_excel import *
 from training_svm import *
 from training_data_augmentation import *
+from gather_pictures import *
 
 from datetime import datetime
 from langchain_huggingface import HuggingFaceEmbeddings
+import winsound
 
 ########################## Init #############################
 
@@ -20,7 +22,7 @@ if __name__ == "__main__":
     path_bmv_cab1 = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\Labels\\BMV_Labels_cab1_top14.xlsx"
     path_bmv_cab2 = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\Labels\\BMV_Labels_cab2_top14.xlsx"
     path_train = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\Training\\TRAXX_AC3_Training_cab1_top7_cnt100.xlsx"
-    dir_name = f"evaluation_cab1_top5_7class_18feat_cnt100"
+    dir_name = f"evaluation_cab1_top5_7class_13feat_cnt100"
     eval_dir = str(os.path.join(os.path.join(os.path.dirname(os.path.abspath(__file__)), "Evaluation"), dir_name))
     cab = "cab1"
 
@@ -33,8 +35,8 @@ if __name__ == "__main__":
     persistent_dir_cab2 = str(os.path.join(current_dir, store_name2))
     embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
-    # Available configs: load_fts, edit_db, similarity, train_svm
-    config = "train_svm"
+    # Available configs: load_fts, edit_db, similarity, train_svm, train_svm_only, evaluate
+    config = "train_svm, evaluate"
 
 ######################## Main ###############################
 
@@ -79,17 +81,19 @@ if __name__ == "__main__":
     if "train_svm" in config:
         txt = []
         x, y, y_sts, sts_time, sts_mem = get_traindata(path_train,[persistent_dir_cab1, persistent_dir_cab2], embedding_model, cab)
-        train_svm(x, y, cab, eval_dir)
+
+        if "train_svm_only" in config:
+            train_svm(x, y, cab, eval_dir)
 
         if "evaluate" in config:
             svm_acc, report, train_time, pred_time, mem_train, mem_pred, cross_val = evaluate_svm(x, y, cab, eval_dir)
             txt.append("SVM:\n"
                     "cross validation score: " + str(cross_val) +
                     "acc: " + str(round(svm_acc, 3)) +
-                    "\ntrain time: " + str(round(train_time * 1000, 2)) + " ms"
-                    "\ntrain RAM: " + str(round(mem_train, 2)) + " MB"
-                    "\ninference time: " + str(round(pred_time * 1000, 2)) + " ms"
-                    "\ninference RAM: " + str(round(mem_pred, 2)) + " MB"
+                    "\ntrain time: " + str(round(train_time * 1000, 2)) + " ms" +
+                    "\ntrain RAM: " + str(round(mem_train, 2)) + " MB" +
+                    "\ninference time: " + str(round(pred_time * 1000, 2)) + " ms" +
+                    "\ninference RAM: " + str(round(mem_pred, 2)) + " MB" +
                     "\nreport:" + report)
 
             # STS Analysis
@@ -97,13 +101,16 @@ if __name__ == "__main__":
             avg_time = sum(sts_time) / len(sts_time)
             avg_mem = sum(sts_mem) / len(sts_mem)
             sts_acc = accuracy_score(y, y_sts)
-            txt.append(f"STS:\n"
+            txt.append("STS:\n"
                   "acc: " + str(round(sts_acc, 3)) +
-                  "\naverage time: " + str(round(avg_time*1000, 2)) + " ms"
+                  "\naverage time: " + str(round(avg_time*1000, 2)) + " ms" +
                   "\naverage RAM: " + str(round(avg_mem, 2)) + " MB")
 
             with open(os.path.join(eval_dir, "evaluation_log.txt"), "w", encoding="utf-8") as f:
                 f.write("\n".join(txt))
             print(txt)
+
+            winsound.Beep(600, 500)
+            gather_pictures()
 
     print("--- Finished ---")

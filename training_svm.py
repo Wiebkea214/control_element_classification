@@ -10,6 +10,7 @@ import joblib
 import psutil
 import threading
 import time
+import winsound
 
 from datetime import datetime
 from sklearn.metrics.pairwise import cosine_similarity
@@ -72,34 +73,43 @@ def get_traindata(path_train, persistent_dir, embedding, cab_train):
 
         features = []
         sts_all = []
-        cosine_all = []
-        last_sts = 0
-        sts_diff = 0
+        weighted_emb_all = []
+        #cosine_all = []
+        #last_sts = 0
+        #sts_diff = 0
 
         if found:
+            features.extend(text_emb)
+
             for sts_candidate, sts_score in candidates_top5:
-                sts_emb = embedding.embed_query(str(sts_candidate.page_content))
-                cosine_score = cosine_similarity([text_emb], [sts_emb])[0][0]
-                cosine_scaled = (cosine_score + 1)/2
-                if last_sts:
-                    sts_diff = sts_score - last_sts
-                else:
-                    last_sts = sts_score
+                sts_emb = np.array(embedding.embed_query(str(sts_candidate.page_content)))
+                #cosine_score = cosine_similarity([text_emb], [sts_emb])[0][0]
+                #cosine_scaled = (cosine_score + 1)/2
+                #if last_sts:
+                #    sts_diff = sts_score - last_sts
+                #else:
+                #    last_sts = sts_score
+                #if sts_diff:
+                #    features.append(sts_diff)
+                #else:
+                #    pass
 
-                if sts_diff:
-                    features.append(sts_diff)
-                else:
-                    pass
-
-                features.extend([sts_score, cosine_scaled])
+                features.append(sts_score)
                 sts_all.append(sts_score)
-                cosine_all.append(cosine_scaled)
+                weighted_emb_all.extend([sts_score * entry for entry in sts_emb])
+                #cosine_all.append(cosine_scaled)
 
+            # mean_cos = np.mean(cosine_all, axis=0)
+            # var_cos = np.var(cosine_all, axis=0)
             mean_sts = np.mean(sts_all, axis=0)
-            mean_cos = np.mean(cosine_all, axis=0)
             var_sts = np.var(sts_all, axis=0)
-            var_cos = np.var(cosine_all, axis=0)
-            features.extend([mean_sts, mean_cos, var_sts, var_cos])
+            min_sts = np.min(sts_all, axis=0)
+            max_sts = np.max(sts_all, axis=0)
+            range_sts = (max_sts - min_sts)
+            rel_STS = (sts_all[0]+0.001)/(sts_all[1]+0.001)    # addition of 0.001 to prevent zero division
+            weight_emb = np.sum(weighted_emb_all)
+
+            features.extend([weight_emb, mean_sts, var_sts, min_sts, max_sts, range_sts, rel_STS])
 
             top1 = candidates_top5[0][0]
             y_sts.append(top1.metadata["id"])
