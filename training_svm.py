@@ -2,7 +2,8 @@ import os
 import re
 
 from evaluation import *
-from similarity_by_db import *
+from setup_vector_database import *
+from feature_vector import *
 
 import pandas as pd
 import numpy as np
@@ -13,30 +14,26 @@ import time
 import winsound
 
 from datetime import datetime
-from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split, learning_curve, cross_val_score
 from sklearn.metrics import classification_report, accuracy_score
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.inspection import permutation_importance
 
 ###########################################################################
 
-def get_traindata(path_train, persistent_dir, embedding, cab_train):
-    pers_dir_cab1 = persistent_dir[0]
-    pers_dir_cab2 = persistent_dir[1]
-
+def get_traindata(path_train, persistent_dir, embedding, cab_train, k, feat):
     col_text = 'Text'
     col_label = 'Label'
     col_cab = 'Cab'
 
-    sts_time = []
-    sts_mem = []
-    process = psutil.Process()
-
     x = []
     y = []
     y_sts = []
+
+    sts_time = []
+    sts_mem = []
+    dim = 0
 
     # Load excel file
     print(f"\n--- Reading training data in {path_train} ---")
@@ -49,72 +46,15 @@ def get_traindata(path_train, persistent_dir, embedding, cab_train):
     print(f"\n--- Organize training data and labels in x and y lists ---")
     for i, line in reader.iterrows():
         text = str(line[col_text])
-        text = re.sub(r"[^a-zA-Z0-9]", " ", text.strip().lower())
-        text_emb = embedding.embed_query(str(text))
         label = line[col_label]
         cab = line[col_cab]
 
-        # Calculate STS score
-        candidates_top5 = []
-        found = True
+        # Compute feature vector
+        features, top1, dim, sts_time, sts_mem = build_feature_vector(embedding, persistent_dir, text, cab_train, k, feat)
 
-        mem_sts_before = process.memory_info().rss / (1024 * 1024)
-        sts_start = time.perf_counter()
-        if (cab == 'cab1' or cab == 'no cab') and cab_train == 'cab1':
-            candidates_top5 = calc_similarity(text, pers_dir_cab1, embedding)
-        elif (cab == 'cab2' or cab == 'no cab') and cab_train == 'cab2':
-            candidates_top5 = calc_similarity(text, pers_dir_cab2, embedding)
-        else:
-            found = False
-        sts_end = time.perf_counter()
-        mem_sts_after = process.memory_info().rss / (1024 * 1024)
-        sts_time.append(sts_end - sts_start)
-        sts_mem.append(mem_sts_before - mem_sts_after)
-
-        features = []
-        sts_all = []
-        weighted_emb_all = []
-        #cosine_all = []
-        #last_sts = 0
-        #sts_diff = 0
-
-        if found:
-            features.extend(text_emb)
-
-            for sts_candidate, sts_score in candidates_top5:
-                sts_emb = np.array(embedding.embed_query(str(sts_candidate.page_content)))
-                #cosine_score = cosine_similarity([text_emb], [sts_emb])[0][0]
-                #cosine_scaled = (cosine_score + 1)/2
-                #if last_sts:
-                #    sts_diff = sts_score - last_sts
-                #else:
-                #    last_sts = sts_score
-                #if sts_diff:
-                #    features.append(sts_diff)
-                #else:
-                #    pass
-
-                features.append(sts_score)
-                sts_all.append(sts_score)
-                weighted_emb_all.extend([sts_score * entry for entry in sts_emb])
-                #cosine_all.append(cosine_scaled)
-
-            # mean_cos = np.mean(cosine_all, axis=0)
-            # var_cos = np.var(cosine_all, axis=0)
-            mean_sts = np.mean(sts_all, axis=0)
-            var_sts = np.var(sts_all, axis=0)
-            min_sts = np.min(sts_all, axis=0)
-            max_sts = np.max(sts_all, axis=0)
-            range_sts = (max_sts - min_sts)
-            rel_STS = (sts_all[0]+0.001)/(sts_all[1]+0.001)    # addition of 0.001 to prevent zero division
-            weight_emb = np.sum(weighted_emb_all)
-
-            features.extend([weight_emb, mean_sts, var_sts, min_sts, max_sts, range_sts, rel_STS])
-
-            top1 = candidates_top5[0][0]
-            y_sts.append(top1.metadata["id"])
-            x.append(features)
-            y.append(label)
+        y_sts.append(top1.metadata["id"])
+        x.append(features)
+        y.append(label)
 
     x = np.array(x)
     y = np.array(y)
@@ -122,37 +62,43 @@ def get_traindata(path_train, persistent_dir, embedding, cab_train):
 
     print(f"\n--- Finished preparation of training data ---")
 
-    return x, y, y_sts, sts_time, sts_mem
+    return x, y, y_sts, sts_time, sts_mem, dim
 
 
 def train_svm(x, y, cab, eval_dir):
     print("\n--- Start training of SVM ---")
     encoder = LabelEncoder()
+    scaler = StandardScaler()
     time_now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
     # Split training and test data
     x_train, x_test, y_train_str, y_test_str = train_test_split(
         x, y, test_size=0.2, random_state=42, stratify=y)
 
+    # Convert string classes to numeric classes
     encoder.fit(y_train_str)
     y_test_num = encoder.transform(y_test_str)
     y_train_num = encoder.transform(y_train_str)
-
     print("y_train_str: " + str(np.unique(y_train_str, return_counts=True)) + "\ny_train_num: " + str(np.unique(y_train_num, return_counts=True)))
+
+    # Normalize vector
+    x_train_scaled = scaler.fit_transform(x_train)
+    x_test_scaled = scaler.transform(x_test)
 
     # SVM setup (RBF-Kernel is standard)
     svm = SVC(kernel="rbf", probability=True, random_state=42)
 
     # Training
-    svm.fit(x_train, y_train_str)
+    svm.fit(x_train_scaled, y_train_str)
 
     # Save model
-    joblib.dump(svm, f"svm_model_{time_now}.joblib")
+    joblib.dump(svm, f"svm_model_{cab}_{time_now}.joblib")
+    joblib.dump(encoder, f"encoder_{cab}_{time_now}.joblib")
     print("\n--- Finished training and saving of SVM ---")
 
     # Prediction with test data
     print("\n--- Start evaluation of model with test data ---")
-    y_score = svm.decision_function(x_test)
+    y_score = svm.decision_function(x_test_scaled)
     y_pred = np.argmax(y_score, axis=1)
 
     report = classification_report(y_test_num, y_pred, zero_division=0, target_names=encoder.classes_)
@@ -162,6 +108,7 @@ def train_svm(x, y, cab, eval_dir):
 def evaluate_svm(x, y, cab, eval_dir):
     print("\n--- Start training of SVM ---")
     encoder = LabelEncoder()
+    scaler = StandardScaler()
     time_now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
     # Split training and test data
@@ -171,6 +118,8 @@ def evaluate_svm(x, y, cab, eval_dir):
     encoder.fit(y_train_str)
     y_test_num = encoder.transform(y_test_str)
     y_train_num = encoder.transform(y_train_str)
+    x_train_scaled = scaler.fit_transform(x_train)
+    x_test_scaled = scaler.transform(x_test)
 
     print("y_train_str: " + str(np.unique(y_train_str, return_counts=True)) + "\ny_train_num: " + str(np.unique(y_train_num, return_counts=True)))
 
@@ -195,7 +144,7 @@ def evaluate_svm(x, y, cab, eval_dir):
     #############################################################################
 
     # Training
-    svm.fit(x_train, y_train_str)
+    svm.fit(x_train_scaled, y_train_str)
 
     ############# Get results for time and load analysis ########################
     train_end = time.perf_counter()
@@ -211,7 +160,7 @@ def evaluate_svm(x, y, cab, eval_dir):
 
     # Prediction with test data
     print("\n--- Start evaluation of model with test data ---")
-    y_score = svm.decision_function(x_test)
+    y_score = svm.decision_function(x_test_scaled)
     y_pred = np.argmax(y_score, axis=1)
 
     ############## Training evaluation ##########################################
@@ -236,12 +185,12 @@ def evaluate_svm(x, y, cab, eval_dir):
         os.makedirs(eval_dir)
 
     ### Perform evaluation SVM
-    cross_val = np.mean(cross_val_score(svm, x_train, y_train_str, cv=5))
-    r = permutation_importance(svm, x_train, y_train_str, n_repeats=30, random_state=0)
+    cross_val = np.mean(cross_val_score(svm, x_train_scaled, y_train_str, cv=5))
+    r = permutation_importance(svm, x_train_scaled, y_train_str, n_repeats=30, random_state=0)
     analysis_cpu_usage(interval, train_start, train_end, pred_start, pred_end, cpu_start, cpu_usage, timestamps, eval_dir)
     analysis_performance(y_test_num, y_pred, encoder, eval_dir)
     analysis_conf_matrix(y_test_num, y_pred, encoder, eval_dir, "confusion_matrix_svm.png")
     analysis_learning(train_sizes, train_scores, test_scores, eval_dir)
     ###################################################################################
 
-    return acc, report, train_time, pred_time, mem_train, mem_pred, cross_val
+    return acc, report, train_time, pred_time, mem_train, mem_pred, cross_val, r

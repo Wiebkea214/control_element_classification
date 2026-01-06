@@ -60,7 +60,6 @@ def get_BMV(path_bmv):
     col_cab = 'CAB'
     col_location = 'LOCATION'
 
-    dict_bmv = {}
     docs_bmv = []
 
     print(f"\n--- Reading bmv in {path_bmv} ---")
@@ -81,10 +80,6 @@ def get_BMV(path_bmv):
             val5 = str(line[col_description5]).lower().strip()
             val_cab = str(line[col_cab]).lower().strip()
 
-            ### write in dict ###
-            print(f"\n--- Writing bmv in dictionary ---")
-            dict_bmv[key_id] = [val_type, val1, val2, val3, val_cab, val_loc]
-
             ### write in sts_doc ###
             print(f"\n--- Writing bmv in Documents ---")
             docs_bmv.append(Document(
@@ -95,4 +90,4 @@ def get_BMV(path_bmv):
 
     print(f"--- Finished reading and storing bmv ---")
 
-    return dict_bmv, docs_bmv # Should be written in txt file
+    return docs_bmv # Should be written in txt file

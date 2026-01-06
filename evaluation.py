@@ -5,7 +5,7 @@ import psutil
 import os
 import time
 
-from sklearn.metrics import roc_auc_score, roc_curve, confusion_matrix, precision_recall_fscore_support
+from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
 
 ###########################################
 
@@ -83,7 +83,6 @@ def analysis_cpu_usage(interval, train_start, train_end, pred_start, pred_end, c
     plt.ylabel("CPU-load (%)")
     plt.grid(True)
     plt.legend()
-    plt.show(block=False)
     plt.savefig(os.path.join(path_dir, "cpu_usage.png"))
 
 
@@ -106,8 +105,6 @@ def analysis_performance(y_test, y_pred, encoder, path_dir):
     plt.ylabel("Value")
     plt.title("Precision, Recall and F1 per class")
     plt.legend()
-
-    plt.show(block=False)
     plt.savefig(os.path.join(path_dir, "performance.png"))
 
 
@@ -125,7 +122,6 @@ def analysis_conf_matrix(y_test, y_pred, encoder, path_dir, filename):
     plt.title("Confusion Matrix")
     plt.xlabel("Predicted classes")
     plt.ylabel("True classes")
-    plt.show(block=False)
     plt.savefig(os.path.join(path_dir, filename))
 
 
@@ -144,5 +140,4 @@ def analysis_learning(train_sizes, train_scores, test_scores, path_dir):
     plt.xlabel("Training Size")
     plt.ylabel("Accuracy")
     plt.legend()
-    plt.show(block=False)
     plt.savefig(os.path.join(path_dir, "learning_curve.png"))

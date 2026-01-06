@@ -5,9 +5,23 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 
 
-# Global:
-
 ######################################################
+
+def calc_similarity(test_step, persistent_dir, embedding_model, k):
+
+    # Load chroma db
+    db = Chroma(
+        embedding_function=embedding_model,
+        persist_directory=persistent_dir)
+
+    # Combine search string
+    input_txt = f"{test_step}."
+
+    # Calculate top k similar results
+    top_k = db.similarity_search_with_score(query=input_txt, k=k)
+
+    return top_k
+
 
 # Function to create and persist vector store
 def edit_vector_db(docs, store_name, persistent_dir, embedding_model):
@@ -38,40 +52,4 @@ def edit_vector_db(docs, store_name, persistent_dir, embedding_model):
             db.add_documents([doc])
 
         print(f"--- Finished updating vector db {store_name} ---")
-
-
-
-'''
-# Function to query a vector store
-def query_vector_store(store_name, query, embedding_function):
-    persistent_directory = os.path.join(db_dir, store_name)
-    if os.path.exists(persistent_directory):
-        print(f"\n--- Querying the Vector Store {store_name} ---")
-        db = Chroma(
-            persist_directory=persistent_directory,
-            embedding_function=embedding_function,
-        )
-        retriever = db.as_retriever(
-            search_type="similarity_score_threshold",
-            search_kwargs={"k": 3, "score_threshold": 0.1},
-        )
-        relevant_docs = retriever.invoke(query)
-
-        # Display the relevant results with metadata
-        print(f"\n--- Relevant Documents for {store_name} ---")
-        for i, doc in enumerate(relevant_docs, 1):
-            print(f"Document {i}:\n{doc.page_content}\n")
-            if doc.metadata:
-                print(f"Source: {doc.metadata.get('source', 'Unknown')}\n")
-    else:
-        print(f"Vector store {store_name} does not exist.")
-
-
-# Define the user's question
-query = "text"
-
-# Query each vector store
-query_vector_store("chroma_db_huggingface", query, embedding_model)
-
-'''
 
