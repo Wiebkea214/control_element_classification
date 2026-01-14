@@ -144,8 +144,8 @@ def show_images_in_one_figure(
         print(f"Summary pics saved under: {save_path}")
 
 
-def gather_pictures(keyword, addition, root, cab):
-    filenames = ["confusion_matrix_sts.png", "confusion_matrix_svm.png", "cpu_usage.png", "learning_curve.png", "performance.png", "kernel_analysis.png"]
+def gather_pictures(keyword, addition, root):
+    filenames = ["confusion_matrix_sts.png", "confusion_matrix_svm.png", "cpu_usage.png", "learning_curve.png", "performance.png"]
 
     for filename in filenames:
         paths = find_file_with_same_name(root_dir=root, filename=filename, recursive=True, sort_by="folder")
@@ -153,19 +153,19 @@ def gather_pictures(keyword, addition, root, cab):
         if keyword:
             paths_filtered = []
             for path in paths:
-                if keyword in str(path) and cab in str(path):
+                if keyword in str(path):
                     paths_filtered.append(path)
                 else: pass
             paths = paths_filtered
 
         show_images_in_one_figure(image_paths=paths, title=f"Comparison: {filename}", caption_mode="folder",
                                   max_image_size=(1200, 1200), tight_layout=True, dpi=200,
-                                  save_path=root / f"vergleich_{cab}_bilder_{addition}_{filename}")
+                                  save_path=root / f"vergleich_allCabs_bilder_{addition}_{filename}")
 
 
 ########################## Cross validation gathering ##############################
 
-def gather_log(keyword, search_string, addition, root, cab):
+def gather_log(keyword, search_string, addition, root):
     filename = "evaluation_log.txt"
 
     paths = find_file_with_same_name(root_dir=root, filename=filename, recursive=True, sort_by="folder")
@@ -173,13 +173,13 @@ def gather_log(keyword, search_string, addition, root, cab):
     if keyword:
         paths_filtered = []
         for path in paths:
-            if keyword in str(path) and cab in str(path):
+            if keyword in str(path):
                 paths_filtered.append(path)
             else:
                 pass
         paths = paths_filtered
 
-    plot_values_from_files(paths, search_string, save_path=root / f"vergleich_{cab}_{addition}_{search_string}")
+    plot_values_from_files(paths, search_string, save_path=root / f"vergleich_allCabs_{addition}_{search_string}")
 
 ####################################################################################
 ######################### Single execution #########################################

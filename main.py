@@ -8,6 +8,7 @@ from feature_vector import *
 
 from datetime import datetime
 from langchain_huggingface import HuggingFaceEmbeddings
+import matplotlib.pyplot as plt
 import winsound
 
 ########################## Init #############################
@@ -81,14 +82,14 @@ def main(cab, k, feat, kernel, path_train, dir_name, config):
 
     if "train_svm" in config:
         txt = []
-        x, y, y_sts, sts_time, sts_mem, dim = get_traindata(path_train,[persistent_dir_cab1, persistent_dir_cab2], embedding_model, cab, k, feat)
+        x, y, y_sts, sts_time, sts_mem, dim = get_traindata(path_train,[persistent_dir_cab1, persistent_dir_cab2], embedding_model, k, feat)
 
         if "train_svm_only" in config:
-            train_svm(x, y, cab, kernel, eval_dir)
+            train_svm(x, y, kernel, eval_dir)
 
         if "evaluate_model" in config:
             # SVM analysis
-            svm_acc, report, train_time, pred_time, mem_train, mem_pred, cross_val, r = evaluate_svm(x, y, cab, eval_dir, kernel)
+            svm_acc, report, train_time, pred_time, mem_train, mem_pred, cross_val, r = evaluate_svm(x, y, eval_dir, kernel)
             txt.append("SVM:" +
                     "\ncross validation score: " + str(round(cross_val*100, 2)) + " %" +
                     "\naccuracy SVM: " + str(round(svm_acc*100, 2)) + " %" +
@@ -114,18 +115,20 @@ def main(cab, k, feat, kernel, path_train, dir_name, config):
                 f.write("\n".join(txt))
 
         if "evaluate_kernel" in config:
-            analysis_kernels(x, y, cab, gather_path, method="grid")
+            analysis_kernels(x, y, gather_path, method="grid")
 
     if "gather_information" in config:
         # Gather information for evaluation
-        gather_pictures("Kernel", "kernels", gather_path, cab)
-        gather_log("Kernel", "cross validation score", "kernels", gather_path, cab)
-        gather_log("Kernel", "accuracy SVM", "kernels", gather_path, cab)
-        gather_log("Kernel", "train time", "kernels", gather_path, cab)
-        gather_log("Kernel", "train RAM", "kernels", gather_path, cab)
-        gather_log("Kernel", "inference time", "kernels", gather_path, cab)
-        gather_log("Kernel", "inference RAM", "kernels", gather_path, cab)
-        gather_log("Kernel", "vector dimensions", "kernels", gather_path, cab)
+        keyword = "9feat"
+        addition = "9feat"
+        gather_pictures(keyword, addition, gather_path)
+        gather_log(keyword, "cross validation score", addition, gather_path)
+        gather_log(keyword, "accuracy SVM", addition, gather_path)
+        gather_log(keyword, "train time", addition, gather_path)
+        gather_log(keyword, "train RAM", addition, gather_path)
+        gather_log(keyword, "inference time", addition, gather_path)
+        gather_log(keyword, "inference RAM", addition, gather_path)
+        gather_log(keyword, "vector dimensions", addition, gather_path)
 
     if "predict" in config:
         svm_model = joblib.load("svm_model_{cab}_{time_now}.joblib")
@@ -136,25 +139,30 @@ def main(cab, k, feat, kernel, path_train, dir_name, config):
         y_pred = label_encoder.inverse_transform(y_pred_encoded)
         print(f"\nSVM prediction: {y_pred[0]}")
 
+    plt.close()
     winsound.Beep(600, 500)
     print("--- Finished ---")
 
 #######################################################################################################
 
 # Automatic evaluation execution
-cabs = ["cab1", "cab2"]
 top_xs = [3, 5, 7]
-feats = [2, 6, 8, 9]
+feats = [6, 8, 9]
 kernels = ["rbf", "linear", "poly", "sigmoid"]
-config_x = "train_svm, evaluate_kernel"
-#config_x = "train_svm, evaluate_model"
-#config_x = "gather_information"
+#config_x = "train_svm, evaluate_kernel"
+#config_x = "train_svm, evaluate_model, gather_information"
+config_x = "gather_information"
 
+
+cab_x = ""
 top_x = 3
 feat_x = 9
 kernel_x = "linear"
 
-for cab_x in cabs:
-    path_train_x = f"F:\\OneDrive\\Masterarbeit\\FTS Daten\\Training\\TRAXX_AC3_Training_{cab_x}_7class_cnt100.xlsx"
-    dir_name_x = f"evaluation_{cab_x}_top{top_x}_7class_{feat_x}feat_{kernel_x}Kernel_scaled_cnt100"
-    main(cab_x, top_x, feat_x, kernel_x, path_train_x, dir_name_x, config_x)
+
+#for feat_x in feats:
+#    for top_x in top_xs:
+path_train_x = f"F:\\OneDrive\\Masterarbeit\\FTS Daten\\Training\\TRAXX_AC3_Training_allCabs_7class_cnt100.xlsx"
+dir_name_x = f"evaluation_allCabs_top{top_x}_7class_{feat_x}feat_{kernel_x}Kernel_scaled_cnt100"
+print(f"----- Start with param feat_x={feat_x}, top_xs={top_xs} -----")
+main(cab_x, top_x, feat_x, kernel_x, path_train_x, dir_name_x, config_x)

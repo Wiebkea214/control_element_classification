@@ -13,6 +13,7 @@ def build_feature_vector(embedding, persistent_dir, text, cab, k, feat):
     pers_dir_cab2 = persistent_dir[1]
 
     text = re.sub(r"[^a-zA-Z0-9]", " ", text.strip().lower())
+    text = f"{text}. In {cab}"
     text_emb = embedding.embed_query(str(text))
 
     process = psutil.Process()
@@ -25,12 +26,13 @@ def build_feature_vector(embedding, persistent_dir, text, cab, k, feat):
 
     mem_sts_before = process.memory_info().rss / (1024 * 1024)
     sts_start = time.perf_counter()
-    if (cab == 'cab1' or cab == 'no cab') and cab == 'cab1':
+    if cab == 'cab1' or cab == 'no cab':
         candidates_top_k = calc_similarity(text, pers_dir_cab1, embedding, k)
-    elif (cab == 'cab2' or cab == 'no cab') and cab == 'cab2':
+    elif cab == 'cab2':
         candidates_top_k = calc_similarity(text, pers_dir_cab2, embedding, k)
     else:
         found = False
+
     sts_end = time.perf_counter()
     mem_sts_after = process.memory_info().rss / (1024 * 1024)
     sts_time.append(sts_end - sts_start)
@@ -78,4 +80,7 @@ def build_feature_vector(embedding, persistent_dir, text, cab, k, feat):
         dim = len(features)
 
         return features, top1, dim, sts_time, sts_mem
+
+    else:
+        return None
 

@@ -22,7 +22,7 @@ from sklearn.inspection import permutation_importance
 
 ###########################################################################
 
-def get_traindata(path_train, persistent_dir, embedding, cab_train, k, feat):
+def get_traindata(path_train, persistent_dir, embedding, k, feat):
     col_text = 'Text'
     col_label = 'Label'
     col_cab = 'Cab'
@@ -50,7 +50,7 @@ def get_traindata(path_train, persistent_dir, embedding, cab_train, k, feat):
         cab = line[col_cab]
 
         # Compute feature vector
-        features, top1, dim, sts_time, sts_mem = build_feature_vector(embedding, persistent_dir, text, cab_train, k, feat)
+        features, top1, dim, sts_time, sts_mem = build_feature_vector(embedding, persistent_dir, text, cab, k, feat)
 
         y_sts.append(top1.metadata["id"])
         x.append(features)
@@ -65,7 +65,7 @@ def get_traindata(path_train, persistent_dir, embedding, cab_train, k, feat):
     return x, y, y_sts, sts_time, sts_mem, dim
 
 
-def train_svm(x, y, cab, kernel, eval_dir):
+def train_svm(x, y, kernel, eval_dir):
     print("\n--- Start training of SVM ---")
     encoder = LabelEncoder()
     scaler = StandardScaler()
@@ -86,14 +86,14 @@ def train_svm(x, y, cab, kernel, eval_dir):
     x_test_scaled = scaler.transform(x_test)
 
     # SVM setup (RBF-Kernel is standard)
-    svm = SVC(kernel=kernel, probability=True, random_state=42)
+    svm = SVC(kernel=kernel, C=10, probability=True, random_state=42)
 
     # Training
     svm.fit(x_train_scaled, y_train_str)
 
     # Save model
-    joblib.dump(svm, f"svm_model_{cab}_{time_now}.joblib")
-    joblib.dump(encoder, f"encoder_{cab}_{time_now}.joblib")
+    joblib.dump(svm, f"svm_model_allCabs_{time_now}.joblib")
+    joblib.dump(encoder, f"encoder_allCabs_{time_now}.joblib")
     print("\n--- Finished training and saving of SVM ---")
 
     # Prediction with test data
@@ -105,7 +105,7 @@ def train_svm(x, y, cab, kernel, eval_dir):
     print(report)
 
 
-def evaluate_svm(x, y, cab, eval_dir, kernel):
+def evaluate_svm(x, y, eval_dir, kernel):
     print("\n--- Start training of SVM ---")
     encoder = LabelEncoder()
     scaler = StandardScaler()
@@ -123,7 +123,7 @@ def evaluate_svm(x, y, cab, eval_dir, kernel):
     print("y_train_str: " + str(np.unique(y_train_str, return_counts=True)) + "\ny_train_num: " + str(np.unique(y_train_num, return_counts=True)))
 
     # SVM setup (SVC for classification, RBF-Kernel is standard)
-    svm = SVC(kernel=kernel, probability=True, random_state=42)
+    svm = SVC(kernel=kernel, C=10, probability=True, random_state=42)
 
     ############# Set preconditions for time and load analysis ##################
     process = psutil.Process()

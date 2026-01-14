@@ -148,7 +148,7 @@ def analysis_learning(train_sizes, train_scores, test_scores, path_dir):
     plt.savefig(os.path.join(path_dir, "learning_curve.png"))
 
 
-def analysis_kernels(x, y, cab, path_dir, method="grid"):
+def analysis_kernels(x, y, path_dir, method="grid"):
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42, stratify=y)
     results = {}
     best_params = {}
@@ -200,4 +200,4 @@ def analysis_kernels(x, y, cab, path_dir, method="grid"):
 
     plt.grid(axis="y", linestyle="--", alpha=0.6)
     plt.tight_layout()
-    plt.savefig(os.path.join(path_dir, f"vergleich_{cab}_kernel_analysis.png"))
+    plt.savefig(os.path.join(path_dir, f"vergleich_allCabs_kernel_analysis.png"))
