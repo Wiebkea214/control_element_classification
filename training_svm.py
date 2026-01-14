@@ -65,7 +65,7 @@ def get_traindata(path_train, persistent_dir, embedding, cab_train, k, feat):
     return x, y, y_sts, sts_time, sts_mem, dim
 
 
-def train_svm(x, y, cab, eval_dir):
+def train_svm(x, y, cab, kernel, eval_dir):
     print("\n--- Start training of SVM ---")
     encoder = LabelEncoder()
     scaler = StandardScaler()
@@ -86,7 +86,7 @@ def train_svm(x, y, cab, eval_dir):
     x_test_scaled = scaler.transform(x_test)
 
     # SVM setup (RBF-Kernel is standard)
-    svm = SVC(kernel="rbf", probability=True, random_state=42)
+    svm = SVC(kernel=kernel, probability=True, random_state=42)
 
     # Training
     svm.fit(x_train_scaled, y_train_str)
@@ -105,15 +105,14 @@ def train_svm(x, y, cab, eval_dir):
     print(report)
 
 
-def evaluate_svm(x, y, cab, eval_dir):
+def evaluate_svm(x, y, cab, eval_dir, kernel):
     print("\n--- Start training of SVM ---")
     encoder = LabelEncoder()
     scaler = StandardScaler()
     time_now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
     # Split training and test data
-    x_train, x_test, y_train_str, y_test_str = train_test_split(
-        x, y, test_size=0.2, random_state=42, stratify=y)
+    x_train, x_test, y_train_str, y_test_str = train_test_split(x, y, test_size=0.2, random_state=42, stratify=y)
 
     encoder.fit(y_train_str)
     y_test_num = encoder.transform(y_test_str)
@@ -123,8 +122,8 @@ def evaluate_svm(x, y, cab, eval_dir):
 
     print("y_train_str: " + str(np.unique(y_train_str, return_counts=True)) + "\ny_train_num: " + str(np.unique(y_train_num, return_counts=True)))
 
-    # SVM setup (RBF-Kernel is standard)
-    svm = SVC(kernel="rbf", probability=True, random_state=42)
+    # SVM setup (SVC for classification, RBF-Kernel is standard)
+    svm = SVC(kernel=kernel, probability=True, random_state=42)
 
     ############# Set preconditions for time and load analysis ##################
     process = psutil.Process()

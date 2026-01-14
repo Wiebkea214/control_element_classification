@@ -13,7 +13,7 @@ import winsound
 ########################## Init #############################
 
 #if __name__ == "__main__":
-def main(cab, k, feat, path_train, dir_name, config):
+def main(cab, k, feat, kernel, path_train, dir_name, config):
     import multiprocessing
     multiprocessing.freeze_support()  # important for Windows
 
@@ -84,11 +84,11 @@ def main(cab, k, feat, path_train, dir_name, config):
         x, y, y_sts, sts_time, sts_mem, dim = get_traindata(path_train,[persistent_dir_cab1, persistent_dir_cab2], embedding_model, cab, k, feat)
 
         if "train_svm_only" in config:
-            train_svm(x, y, cab, eval_dir)
+            train_svm(x, y, cab, kernel, eval_dir)
 
-        if "evaluate" in config:
+        if "evaluate_model" in config:
             # SVM analysis
-            svm_acc, report, train_time, pred_time, mem_train, mem_pred, cross_val, r = evaluate_svm(x, y, cab, eval_dir)
+            svm_acc, report, train_time, pred_time, mem_train, mem_pred, cross_val, r = evaluate_svm(x, y, cab, eval_dir, kernel)
             txt.append("SVM:" +
                     "\ncross validation score: " + str(round(cross_val*100, 2)) + " %" +
                     "\naccuracy SVM: " + str(round(svm_acc*100, 2)) + " %" +
@@ -113,15 +113,19 @@ def main(cab, k, feat, path_train, dir_name, config):
             with open(os.path.join(eval_dir, "evaluation_log.txt"), "w", encoding="utf-8") as f:
                 f.write("\n".join(txt))
 
-            # Gather information for evaluation
-            gather_pictures("_scaled_", gather_path, cab)
-            gather_log("_scaled_", "cross validation score", gather_path, cab)
-            gather_log("_scaled_", "accuracy SVM", gather_path, cab)
-            gather_log("_scaled_", "train time", gather_path, cab)
-            gather_log("_scaled_", "train RAM", gather_path, cab)
-            gather_log("_scaled_", "inference time", gather_path, cab)
-            gather_log("_scaled_", "inference RAM", gather_path, cab)
-            gather_log("_scaled_", "vector dimensions", gather_path, cab)
+        if "evaluate_kernel" in config:
+            analysis_kernels(x, y, cab, gather_path, method="grid")
+
+    if "gather_information" in config:
+        # Gather information for evaluation
+        gather_pictures("Kernel", "kernels", gather_path, cab)
+        gather_log("Kernel", "cross validation score", "kernels", gather_path, cab)
+        gather_log("Kernel", "accuracy SVM", "kernels", gather_path, cab)
+        gather_log("Kernel", "train time", "kernels", gather_path, cab)
+        gather_log("Kernel", "train RAM", "kernels", gather_path, cab)
+        gather_log("Kernel", "inference time", "kernels", gather_path, cab)
+        gather_log("Kernel", "inference RAM", "kernels", gather_path, cab)
+        gather_log("Kernel", "vector dimensions", "kernels", gather_path, cab)
 
     if "predict" in config:
         svm_model = joblib.load("svm_model_{cab}_{time_now}.joblib")
@@ -138,14 +142,19 @@ def main(cab, k, feat, path_train, dir_name, config):
 #######################################################################################################
 
 # Automatic evaluation execution
-cabs = ["cab2"]
+cabs = ["cab1", "cab2"]
 top_xs = [3, 5, 7]
 feats = [2, 6, 8, 9]
-config_x = "train_svm, evaluate"
+kernels = ["rbf", "linear", "poly", "sigmoid"]
+config_x = "train_svm, evaluate_kernel"
+#config_x = "train_svm, evaluate_model"
+#config_x = "gather_information"
+
+top_x = 3
+feat_x = 9
+kernel_x = "linear"
 
 for cab_x in cabs:
-    for top_x in top_xs:
-        for feat_x in feats:
-            path_train_x = f"F:\\OneDrive\\Masterarbeit\\FTS Daten\\Training\\TRAXX_AC3_Training_{cab_x}_7class_cnt100.xlsx"
-            dir_name_x = f"evaluation_{cab_x}_top{top_x}_7class_{feat_x}feat_scaled_cnt100"
-            main(cab_x, top_x, feat_x, path_train_x, dir_name_x, config_x)
+    path_train_x = f"F:\\OneDrive\\Masterarbeit\\FTS Daten\\Training\\TRAXX_AC3_Training_{cab_x}_7class_cnt100.xlsx"
+    dir_name_x = f"evaluation_{cab_x}_top{top_x}_7class_{feat_x}feat_{kernel_x}Kernel_scaled_cnt100"
+    main(cab_x, top_x, feat_x, kernel_x, path_train_x, dir_name_x, config_x)

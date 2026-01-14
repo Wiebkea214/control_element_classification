@@ -6,6 +6,9 @@ import os
 import time
 
 from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, train_test_split
+from sklearn.svm import SVC
+from scipy.stats import uniform
 
 ###########################################
 
@@ -96,6 +99,7 @@ def analysis_performance(y_test, y_pred, encoder, path_dir):
     x = np.arange(len(precision))
 
     # Plots
+    plt.ion()
     plt.figure(figsize=(10, 6))
     plt.bar(x, precision, width=0.25, label="Precision")
     plt.bar([i + 0.25 for i in x], recall, width=0.25, label="Recall")
@@ -131,6 +135,7 @@ def analysis_learning(train_sizes, train_scores, test_scores, path_dir):
     test_mean = np.mean(test_scores, axis=1)
     test_std = np.std(test_scores, axis=1)
 
+    plt.ion()
     plt.figure(figsize=(8,6))
     plt.plot(train_sizes, train_mean, 'o-', color="blue", label="Training Score")
     plt.plot(train_sizes, test_mean, 'o-', color="green", label="Validation Score")
@@ -141,3 +146,58 @@ def analysis_learning(train_sizes, train_scores, test_scores, path_dir):
     plt.ylabel("Accuracy")
     plt.legend()
     plt.savefig(os.path.join(path_dir, "learning_curve.png"))
+
+
+def analysis_kernels(x, y, cab, path_dir, method="grid"):
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42, stratify=y)
+    results = {}
+    best_params = {}
+
+    ### Linear kernel ###
+    if method == "grid":
+        param_grid_linear = {"C": [0.1, 1, 10, 100]}
+        model_linear = GridSearchCV(SVC(kernel="linear"), param_grid_linear, cv=5)
+    else:
+        param_dist_linear = {"C": uniform(0.1, 100)}
+        model_linear = RandomizedSearchCV(SVC(kernel="linear"), param_dist_linear, n_iter=10, cv=5)
+
+    model_linear.fit(x_train, y_train)
+    acc_linear = model_linear.score(x_test, y_test)
+    results["Linear"] = acc_linear
+    best_params["Linear"] = model_linear.best_params_
+
+    ### RBF kernel ###
+    if method == "grid":
+        param_grid_rbf = {"C": [0.1, 1, 10, 100], "gamma": ["scale", "auto"]}
+        model_rbf = GridSearchCV(SVC(kernel="rbf"), param_grid_rbf, cv=5)
+    else:
+        param_dist_rbf = {"C": uniform(0.1, 100), "gamma": uniform(0.0001, 1)}
+        model_rbf = RandomizedSearchCV(SVC(kernel="rbf"), param_dist_rbf, n_iter=20, cv=5)
+
+    model_rbf.fit(x_train, y_train)
+    acc_rbf = model_rbf.score(x_test, y_test)
+    results["RBF"] = acc_rbf
+    best_params["RBF"] = model_rbf.best_params_
+
+    # Plot results
+    plt.ion()
+    plt.figure(figsize=(10,6))
+    bars = plt.bar(results.keys(), results.values(), color=["steelblue","orange"])
+    plt.ylabel("Accuracy")
+    plt.title(f"SVM Kernel Vergleich ({method.capitalize()} Search)")
+    plt.ylim(0, 1)
+
+    # Scores over bars
+    for bar, score in zip(bars, results.values()):
+        plt.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.02,f"{score:.3f}", ha="center", fontsize=11, fontweight="bold")
+
+    # Parametertext
+    param_text = ( f"Linear Kernel:\n{best_params['Linear']}"
+                   f"\n\nRBF Kernel:\n{best_params['RBF']}" )
+
+    plt.text(1.05, 0.5, param_text, transform=plt.gca().transAxes, fontsize=10, verticalalignment="center",
+             bbox=dict(facecolor="white", alpha=0.8))
+
+    plt.grid(axis="y", linestyle="--", alpha=0.6)
+    plt.tight_layout()
+    plt.savefig(os.path.join(path_dir, f"vergleich_{cab}_kernel_analysis.png"))
