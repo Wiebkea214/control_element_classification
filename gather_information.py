@@ -72,6 +72,8 @@ def plot_values_from_files(file_paths, search_string, save_path):
         plt.savefig(save_path)
         print(f"Summary pics saved under: {save_path}")
 
+    plt.close()
+
 
 ########################## Plot gathering ##########################################
 
@@ -142,6 +144,7 @@ def show_images_in_one_figure(
         save_path.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(save_path, dpi=dpi)
         print(f"Summary pics saved under: {save_path}")
+    plt.close()
 
 
 def gather_pictures(keyword, addition, root):

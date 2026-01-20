@@ -25,8 +25,8 @@ def main(cab, k, feat, kernel, path_train, dir_name, config):
     #feat = 9
     test_step = [""]
     path_fts = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\TRAXX_AC3_ISR__Control_front_and_tail_lights.xlsx"
-    path_bmv_cab1 = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\Labels\\BMV_Labels_cab1_top14.xlsx"
-    path_bmv_cab2 = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\Labels\\BMV_Labels_cab2_top14.xlsx"
+    path_bmv_cab1 = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\Labels\\BMV_Labels_cab1_15class.xlsx"
+    path_bmv_cab2 = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\Labels\\BMV_Labels_cab2_15class.xlsx"
     #path_train = f"F:\\OneDrive\\Masterarbeit\\FTS Daten\\Training\\TRAXX_AC3_Training_{cab}_7class_cnt100.xlsx"
     #dir_name = f"evaluation_{cab}_top{k}_7class_{feat}feat_scaled_cnt100"
     gather_path = Path(os.path.join(os.path.dirname(os.path.abspath(__file__)), "Evaluation auto"))
@@ -89,15 +89,37 @@ def main(cab, k, feat, kernel, path_train, dir_name, config):
 
         if "evaluate_model" in config:
             # SVM analysis
-            svm_acc, report, train_time, pred_time, mem_train, mem_pred, cross_val, r = evaluate_svm(x, y, eval_dir, kernel)
+            data = {
+                "cross_val" : [],
+                "svm_val" : [],
+                "train_time" : [],
+                "mem_train" : [],
+                "pred_time" : [],
+                "mem_pred" : [],
+                "dim" : []
+            }
+            report = ""
+
+            for i in range(3):
+                svm_acc, report, train_time, pred_time, mem_train, mem_pred, cross_val, r = evaluate_svm(x, y, eval_dir, kernel)
+                data["cross_val"].append(cross_val)
+                data["svm_val"].append(svm_acc)
+                data["train_time"].append(train_time)
+                data["pred_time"].append(pred_time)
+                data["mem_train"].append(mem_train)
+                data["mem_pred"].append(mem_pred)
+                data["dim"].append(dim)
+
+            means = {key: sum(values) / len(values) for key, values in data.items()}
+
             txt.append("SVM:" +
-                    "\ncross validation score: " + str(round(cross_val*100, 2)) + " %" +
-                    "\naccuracy SVM: " + str(round(svm_acc*100, 2)) + " %" +
-                    "\ntrain time: " + str(round(train_time * 1000, 2)) + " ms" +
-                    "\ntrain RAM: " + str(round(mem_train, 2)) + " MB" +
-                    "\ninference time: " + str(round(pred_time * 1000, 2)) + " ms" +
-                    "\ninference RAM: " + str(round(mem_pred, 2)) + " MB" +
-                    "\nvector dimensions: " + str(dim) + " Features" +
+                    "\ncross validation score: " + str(round(means["cross_val"]*100, 2)) + " %" +
+                    "\naccuracy SVM: " + str(round(means["svm_val"]*100, 2)) + " %" +
+                    "\ntrain time: " + str(round(means["train_time"] * 1000, 2)) + " ms" +
+                    "\ntrain RAM: " + str(round(means["mem_train"], 2)) + " MB" +
+                    "\ninference time: " + str(round(means["pred_time"] * 1000, 2)) + " ms" +
+                    "\ninference RAM: " + str(round(means["mem_pred"], 2)) + " MB" +
+                    "\nvector dimensions: " + str(means["dim"]) + " Features" +
                     "\nreport:" + report)
             print(report)
 
@@ -115,12 +137,12 @@ def main(cab, k, feat, kernel, path_train, dir_name, config):
                 f.write("\n".join(txt))
 
         if "evaluate_kernel" in config:
-            analysis_kernels(x, y, gather_path, method="grid")
+            analysis_kernels(x, y, gather_path)
 
     if "gather_information" in config:
         # Gather information for evaluation
-        keyword = "9feat"
-        addition = "9feat"
+        keyword = "allCabs"
+        addition = ""
         gather_pictures(keyword, addition, gather_path)
         gather_log(keyword, "cross validation score", addition, gather_path)
         gather_log(keyword, "accuracy SVM", addition, gather_path)
@@ -148,21 +170,19 @@ def main(cab, k, feat, kernel, path_train, dir_name, config):
 # Automatic evaluation execution
 top_xs = [3, 5, 7]
 feats = [6, 8, 9]
-kernels = ["rbf", "linear", "poly", "sigmoid"]
-#config_x = "train_svm, evaluate_kernel"
+classes = [7, 11]
+config_x = "train_svm, evaluate_kernel"
 #config_x = "train_svm, evaluate_model, gather_information"
-config_x = "gather_information"
+#config_x = "gather_information"
 
 
 cab_x = ""
+class_x = 14 
 top_x = 3
 feat_x = 9
 kernel_x = "linear"
 
-
-#for feat_x in feats:
-#    for top_x in top_xs:
-path_train_x = f"F:\\OneDrive\\Masterarbeit\\FTS Daten\\Training\\TRAXX_AC3_Training_allCabs_7class_cnt100.xlsx"
-dir_name_x = f"evaluation_allCabs_top{top_x}_7class_{feat_x}feat_{kernel_x}Kernel_scaled_cnt100"
-print(f"----- Start with param feat_x={feat_x}, top_xs={top_xs} -----")
+path_train_x = f"F:\\OneDrive\\Masterarbeit\\FTS Daten\\Training\\TRAXX_AC3_Training_allCabs_{class_x}class_cnt100.xlsx"
+dir_name_x = f"evaluation_allCabs_top{top_x}_{class_x}class_{feat_x}feat_{kernel_x}Kernel_scaled_cnt100"
+print(f"----- Start with param feat_x={feat_x}, top_xs={top_x} -----")
 main(cab_x, top_x, feat_x, kernel_x, path_train_x, dir_name_x, config_x)

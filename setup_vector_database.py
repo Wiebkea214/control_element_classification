@@ -18,7 +18,7 @@ def calc_similarity(test_step, persistent_dir, embedding_model, k):
     input_txt = f"{test_step}."
 
     # Calculate top k similar results
-    top_k = db.similarity_search_with_score(query=input_txt, k=k)
+    top_k = db.similarity_search_with_score(query=input_txt)
 
     return top_k
 
