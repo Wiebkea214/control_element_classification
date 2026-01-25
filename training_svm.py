@@ -86,7 +86,10 @@ def train_svm(x, y, kernel, eval_dir):
     x_test_scaled = scaler.transform(x_test)
 
     # SVM setup (RBF-Kernel is standard)
-    svm = SVC(kernel=kernel, C=10, probability=True, random_state=42)
+    if kernel == "poly":
+        svm = SVC(kernel="poly", C=90, degree=1, gamma="scale", probability=True, random_state=42)
+    else:
+        svm = SVC(kernel="linear", C=10, probability=True, random_state=42)
 
     # Training
     svm.fit(x_train_scaled, y_train_str)
@@ -123,7 +126,10 @@ def evaluate_svm(x, y, eval_dir, kernel):
     print("y_train_str: " + str(np.unique(y_train_str, return_counts=True)) + "\ny_train_num: " + str(np.unique(y_train_num, return_counts=True)))
 
     # SVM setup (SVC for classification, RBF-Kernel is standard)
-    svm = SVC(kernel=kernel, C=10, probability=True, random_state=42)
+    if kernel == "poly":
+        svm = SVC(kernel="poly", C=90, degree=1, gamma="scale", probability=True, random_state=42)
+    else:
+        svm = SVC(kernel="linear", C=10, probability=True, random_state=42)
 
     ############# Set preconditions for time and load analysis ##################
     process = psutil.Process()

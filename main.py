@@ -25,11 +25,12 @@ def main(cab, k, feat, kernel, path_train, dir_name, config):
     #feat = 9
     test_step = [""]
     path_fts = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\TRAXX_AC3_ISR__Control_front_and_tail_lights.xlsx"
-    path_bmv_cab1 = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\Labels\\BMV_Labels_cab1_15class.xlsx"
-    path_bmv_cab2 = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\Labels\\BMV_Labels_cab2_15class.xlsx"
+    path_bmv_cab1 = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\Labels\\BMV_Labels_cab1_14class.xlsx"
+    path_bmv_cab2 = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\Labels\\BMV_Labels_cab2_14class.xlsx"
     #path_train = f"F:\\OneDrive\\Masterarbeit\\FTS Daten\\Training\\TRAXX_AC3_Training_{cab}_7class_cnt100.xlsx"
     #dir_name = f"evaluation_{cab}_top{k}_7class_{feat}feat_scaled_cnt100"
     gather_path = Path(os.path.join(os.path.dirname(os.path.abspath(__file__)), "Evaluation auto"))
+    top_k_path = Path(os.path.join(os.path.dirname(os.path.abspath(__file__)), "Evaluation Top-k"))
     eval_dir = str(os.path.join(os.path.join(os.path.dirname(os.path.abspath(__file__)), "Evaluation auto"), dir_name))
 
     # Available configs: load_fts, edit_db, similarity, train_svm, train_svm_only, evaluate
@@ -89,6 +90,7 @@ def main(cab, k, feat, kernel, path_train, dir_name, config):
 
         if "evaluate_model" in config:
             # SVM analysis
+
             data = {
                 "cross_val" : [],
                 "svm_val" : [],
@@ -100,7 +102,7 @@ def main(cab, k, feat, kernel, path_train, dir_name, config):
             }
             report = ""
 
-            for i in range(3):
+            for i in range(1):
                 svm_acc, report, train_time, pred_time, mem_train, mem_pred, cross_val, r = evaluate_svm(x, y, eval_dir, kernel)
                 data["cross_val"].append(cross_val)
                 data["svm_val"].append(svm_acc)
@@ -141,7 +143,7 @@ def main(cab, k, feat, kernel, path_train, dir_name, config):
 
     if "gather_information" in config:
         # Gather information for evaluation
-        keyword = "allCabs"
+        keyword = "allClasses"
         addition = ""
         gather_pictures(keyword, addition, gather_path)
         gather_log(keyword, "cross validation score", addition, gather_path)
@@ -151,6 +153,9 @@ def main(cab, k, feat, kernel, path_train, dir_name, config):
         gather_log(keyword, "inference time", addition, gather_path)
         gather_log(keyword, "inference RAM", addition, gather_path)
         gather_log(keyword, "vector dimensions", addition, gather_path)
+
+    if "gather_top-k" in config:
+        gather_top_k(top_k_path)
 
     if "predict" in config:
         svm_model = joblib.load("svm_model_{cab}_{time_now}.joblib")
@@ -168,21 +173,26 @@ def main(cab, k, feat, kernel, path_train, dir_name, config):
 #######################################################################################################
 
 # Automatic evaluation execution
-top_xs = [3, 5, 7]
+top_xs = [3, 5, 7, 9, 10000]
 feats = [6, 8, 9]
-classes = [7, 11]
-config_x = "train_svm, evaluate_kernel"
-#config_x = "train_svm, evaluate_model, gather_information"
-#config_x = "gather_information"
+classes = [7, 14]
+kernels = ["linear", "poly"]
 
+#config_x = "train_svm, evaluate_kernel"
+#config_x = "gather_top-k"
+config_x = "train_svm, evaluate_model"
+#config_x = "gather_information, gather_top-k"
 
 cab_x = ""
 class_x = 14 
-top_x = 3
+top_x = 5
 feat_x = 9
+cnt = 150
 kernel_x = "linear"
 
-path_train_x = f"F:\\OneDrive\\Masterarbeit\\FTS Daten\\Training\\TRAXX_AC3_Training_allCabs_{class_x}class_cnt100.xlsx"
-dir_name_x = f"evaluation_allCabs_top{top_x}_{class_x}class_{feat_x}feat_{kernel_x}Kernel_scaled_cnt100"
-print(f"----- Start with param feat_x={feat_x}, top_xs={top_x} -----")
-main(cab_x, top_x, feat_x, kernel_x, path_train_x, dir_name_x, config_x)
+for kernel_x in kernels:
+    for top_x in top_xs:
+        path_train_x = f"F:\\OneDrive\\Masterarbeit\\FTS Daten\\Training\\TRAXX_AC3_Training_allCabs_{class_x}class_cnt{cnt}.xlsx"
+        dir_name_x = f"evaluation_allCabs_top{top_x}_{class_x}class_{feat_x}feat_{kernel_x}Kernel_final_cnt{cnt}"
+        print(f"----- Start with param feat_x={feat_x}, top_xs={top_x}, class={class_x}, kernel={kernel_x}, cnt={cnt} -----")
+        main(cab_x, top_x, feat_x, kernel_x, path_train_x, dir_name_x, config_x)
