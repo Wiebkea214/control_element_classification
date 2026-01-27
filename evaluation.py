@@ -1,9 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+import pandas as pd
 import psutil
-import os
+import re
 import time
+
+from setup_vector_database import *
+from pathlib import Path
+from collections import Counter
 
 from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
 from sklearn.model_selection import GridSearchCV, train_test_split
@@ -224,4 +229,67 @@ def analysis_kernels(x, y, path_dir):
     plt.grid(axis="y", linestyle="--", alpha=0.6)
     plt.tight_layout()
     plt.savefig(os.path.join(path_dir, f"vergleich_allCabs_kernel_analysis.png"), bbox_inches="tight")
+    plt.close()
+
+
+def analysis_sts(path_dir, embedding, persistent_dir):
+    path_train = f"F:\\OneDrive\\Masterarbeit\\FTS Daten\\Training\\TRAXX_AC3_Training_allCabs_7class_cnt100.xlsx"
+    pers_dir_cab1 = persistent_dir[0]
+    pers_dir_cab2 = persistent_dir[1]
+
+    # Load excel file
+    if os.path.exists(path_train):
+        reader = pd.read_excel(path_train, engine='openpyxl')
+    else:
+        print(f"!!! File {path_train} not found")
+        return
+
+    positions = []
+
+    for i, line in reader.iterrows():
+        text = str(line["Text"])
+        correct_label = line["Label"]
+        cab = line["Cab"]
+
+        text = re.sub(r"[^a-zA-Z0-9]", " ", text.strip().lower())
+        text = f"{text}. In {cab}"
+
+        # Calculate STS score
+        results = []
+        found = True
+
+        if cab == 'cab1' or cab == 'no cab':
+            results = calc_similarity(text, pers_dir_cab1, embedding, 100)
+        elif cab == 'cab2':
+            results = calc_similarity(text, pers_dir_cab2, embedding, 100)
+        else:
+            found = False
+
+        if found:
+            retrieved_ids = []
+            for doc in results:
+                id = doc[0].metadata["id"]
+                retrieved_ids.append(id)
+
+            if correct_label in retrieved_ids:
+                pos = retrieved_ids.index(correct_label) + 1
+            else:
+                pos = None
+            positions.append(pos)
+
+    # Plot data
+    top_k = 15
+    normalized = [p if p is not None else top_k + 1 for p in positions]
+
+    counts = Counter(normalized)
+    labels = list(range(1, top_k + 2))
+    values = [counts.get(pos, 0) for pos in labels]
+    x_labels = [str(i) for i in range(1, top_k + 1)] + ["Nicht gefunden"]
+    plt.figure(figsize=(12, 6))
+    plt.bar(x_labels, values, color="steelblue")
+    plt.title("Analyse Top-k STS-Ergebnissen")
+    plt.xlabel("Trefferposition")
+    plt.ylabel("Anzahl")
+    plt.tight_layout()
+    plt.savefig(os.path.join(path_dir, f"vergleich_allCabs__sts_analysis.png"), bbox_inches="tight")
     plt.close()

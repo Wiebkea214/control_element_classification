@@ -143,7 +143,7 @@ def main(cab, k, feat, kernel, path_train, dir_name, config):
 
     if "gather_information" in config:
         # Gather information for evaluation
-        keyword = "allClasses"
+        keyword = "final"
         addition = ""
         gather_pictures(keyword, addition, gather_path)
         gather_log(keyword, "cross validation score", addition, gather_path)
@@ -156,6 +156,9 @@ def main(cab, k, feat, kernel, path_train, dir_name, config):
 
     if "gather_top-k" in config:
         gather_top_k(top_k_path)
+
+    if "analyse_sts" in config:
+        analysis_sts(gather_path, embedding_model, [persistent_dir_cab1, persistent_dir_cab2])
 
     if "predict" in config:
         svm_model = joblib.load("svm_model_{cab}_{time_now}.joblib")
@@ -173,26 +176,25 @@ def main(cab, k, feat, kernel, path_train, dir_name, config):
 #######################################################################################################
 
 # Automatic evaluation execution
-top_xs = [3, 5, 7, 9, 10000]
+top_xs = [3, 5, 7, 10, 10000]
 feats = [6, 8, 9]
 classes = [7, 14]
 kernels = ["linear", "poly"]
 
 #config_x = "train_svm, evaluate_kernel"
 #config_x = "gather_top-k"
-config_x = "train_svm, evaluate_model"
-#config_x = "gather_information, gather_top-k"
+#config_x = "train_svm, evaluate_model"
+#config_x = "analyse_sts"
+#config_x = "gather_top-k"
 
 cab_x = ""
 class_x = 14 
-top_x = 5
+top_x = 10
 feat_x = 9
 cnt = 150
 kernel_x = "linear"
 
-for kernel_x in kernels:
-    for top_x in top_xs:
-        path_train_x = f"F:\\OneDrive\\Masterarbeit\\FTS Daten\\Training\\TRAXX_AC3_Training_allCabs_{class_x}class_cnt{cnt}.xlsx"
-        dir_name_x = f"evaluation_allCabs_top{top_x}_{class_x}class_{feat_x}feat_{kernel_x}Kernel_final_cnt{cnt}"
-        print(f"----- Start with param feat_x={feat_x}, top_xs={top_x}, class={class_x}, kernel={kernel_x}, cnt={cnt} -----")
-        main(cab_x, top_x, feat_x, kernel_x, path_train_x, dir_name_x, config_x)
+path_train_x = f"F:\\OneDrive\\Masterarbeit\\FTS Daten\\Training\\TRAXX_AC3_Training_allCabs_{class_x}class_cnt{cnt}.xlsx"
+dir_name_x = f"evaluation_allCabs_top{top_x}_{class_x}class_{feat_x}feat_{kernel_x}Kernel_final_cnt{cnt}"
+print(f"----- Start with param feat_x={feat_x}, top_xs={top_x}, class={class_x}, kernel={kernel_x}, cnt={cnt} -----")
+main(cab_x, top_x, feat_x, kernel_x, path_train_x, dir_name_x, config_x)
