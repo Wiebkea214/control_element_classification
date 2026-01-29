@@ -102,7 +102,7 @@ def main(cab, k, feat, kernel, path_train, dir_name, config):
             }
             report = ""
 
-            for i in range(1):
+            for i in range(3):
                 svm_acc, report, train_time, pred_time, mem_train, mem_pred, cross_val, r = evaluate_svm(x, y, eval_dir, kernel)
                 data["cross_val"].append(cross_val)
                 data["svm_val"].append(svm_acc)
@@ -146,7 +146,7 @@ def main(cab, k, feat, kernel, path_train, dir_name, config):
         keyword = "final"
         addition = ""
         gather_pictures(keyword, addition, gather_path)
-        gather_log(keyword, "cross validation score", addition, gather_path)
+        #gather_log(keyword, "cross validation score", addition, gather_path)
         gather_log(keyword, "accuracy SVM", addition, gather_path)
         gather_log(keyword, "train time", addition, gather_path)
         gather_log(keyword, "train RAM", addition, gather_path)
@@ -178,23 +178,24 @@ def main(cab, k, feat, kernel, path_train, dir_name, config):
 # Automatic evaluation execution
 top_xs = [3, 5, 7, 10, 10000]
 feats = [6, 8, 9]
-classes = [7, 14]
+classes = [2,4,6,8,10,12,14]
 kernels = ["linear", "poly"]
 
 #config_x = "train_svm, evaluate_kernel"
 #config_x = "gather_top-k"
-#config_x = "train_svm, evaluate_model"
+config_x = "train_svm, evaluate_model"
 #config_x = "analyse_sts"
 #config_x = "gather_top-k"
 
 cab_x = ""
 class_x = 14 
-top_x = 10
+top_x = 5
 feat_x = 9
 cnt = 150
 kernel_x = "linear"
 
-path_train_x = f"F:\\OneDrive\\Masterarbeit\\FTS Daten\\Training\\TRAXX_AC3_Training_allCabs_{class_x}class_cnt{cnt}.xlsx"
-dir_name_x = f"evaluation_allCabs_top{top_x}_{class_x}class_{feat_x}feat_{kernel_x}Kernel_final_cnt{cnt}"
-print(f"----- Start with param feat_x={feat_x}, top_xs={top_x}, class={class_x}, kernel={kernel_x}, cnt={cnt} -----")
-main(cab_x, top_x, feat_x, kernel_x, path_train_x, dir_name_x, config_x)
+for class_x in classes:
+    path_train_x = f"F:\\OneDrive\\Masterarbeit\\FTS Daten\\Training\\TRAXX_AC3_Training_allCabs_{class_x}class_cnt{cnt}.xlsx"
+    dir_name_x = f"evaluation_allCabs_top{top_x}_{class_x}class_{feat_x}feat_{kernel_x}Kernel_final_cnt{cnt}"
+    print(f"----- Start with param feat_x={feat_x}, top_xs={top_x}, class={class_x}, kernel={kernel_x}, cnt={cnt} -----")
+    main(cab_x, top_x, feat_x, kernel_x, path_train_x, dir_name_x, config_x)

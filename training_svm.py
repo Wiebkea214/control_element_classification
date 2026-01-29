@@ -190,11 +190,11 @@ def evaluate_svm(x, y, eval_dir, kernel):
         os.makedirs(eval_dir)
 
     ### Perform evaluation SVM
-    cross_val = np.mean(cross_val_score(svm, x_train_scaled, y_train_str, cv=5))
-    r = permutation_importance(svm, x_train_scaled, y_train_str, n_repeats=30, random_state=0)
+    cross_val = 0 #np.mean(cross_val_score(svm, x_train_scaled, y_train_str, cv=5))
+    r = 0 #permutation_importance(svm, x_train_scaled, y_train_str, n_repeats=30, random_state=0)
     analysis_cpu_usage(interval, train_start, train_end, pred_start, pred_end, cpu_start, cpu_usage, timestamps, eval_dir)
     analysis_performance(y_test_num, y_pred, encoder, eval_dir)
-    analysis_conf_matrix(y_test_num, y_pred, encoder, eval_dir, "confusion_matrix_svm.png")
+    #analysis_conf_matrix(y_test_num, y_pred, encoder, eval_dir, "confusion_matrix_svm.png")
     analysis_learning(train_sizes, train_scores, test_scores, eval_dir)
     ###################################################################################
 
