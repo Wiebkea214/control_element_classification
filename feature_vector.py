@@ -54,8 +54,8 @@ def build_feature_vector(embedding, persistent_dir, text, cab, k, feat):
                 features.append(sts_score)
                 features.append(cosine_score)
             '''
-            #if feat is not 1:
-            features.append(sts_score)
+            if feat is not 0:
+                features.append(sts_score)
 
             sts_all.append(sts_score)
             weighted_emb_all.extend([sts_score * entry for entry in sts_emb])
@@ -75,8 +75,12 @@ def build_feature_vector(embedding, persistent_dir, text, cab, k, feat):
         if feat == 6:
             features.extend([mean_sts, var_sts, mean_cos, var_cos])
         '''
-        features.extend([weight_emb, mean_sts, var_sts, min_sts, max_sts, range_sts, rel_sts])
-        features.extend(text_emb)
+        if feat == 0:
+            features.extend(text_emb)
+
+        if feat == 9:
+            features.extend([weight_emb, mean_sts, var_sts, min_sts, max_sts, range_sts, rel_sts])
+            features.extend(text_emb)
 
         '''
         if feat == 1:

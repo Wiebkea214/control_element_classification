@@ -1,0 +1,47 @@
+SVM:
+cross validation score: 94.91 %
+accuracy SVM: 96.07 %
+train time: 3321.57 ms
+train RAM: 9.62 MB
+inference time: 463.83 ms
+inference RAM: 0.06 MB
+vector dimensions: 396.0 Features
+report:              precision    recall  f1-score   support
+
+     -GC.S01       0.97      0.97      0.97        30
+     -GC.S02       0.90      0.93      0.92        30
+     -GC.S03       0.88      0.93      0.90        30
+     -GC.S04       0.93      0.87      0.90        30
+     -GC.S07       0.97      0.93      0.95        30
+     -GC.S08       0.97      0.97      0.97        30
+     -GC.S21       0.97      0.97      0.97        30
+     -GC.S22       0.97      1.00      0.98        30
+     -GC.S29       1.00      1.00      1.00        30
+     -GC.S30       0.97      1.00      0.98        30
+     -HC.S01       1.00      0.93      0.97        30
+     -HC.S02       0.97      0.97      0.97        30
+     -HC.S03       0.91      0.97      0.94        30
+     -HC.S04       0.97      0.97      0.97        30
+ -TD.A01-S01       1.00      0.93      0.97        30
+ -TD.A02-S01       0.94      1.00      0.97        30
+ -TD.A21-S12       0.91      0.97      0.94        30
+ -TD.A21-S13       0.97      0.97      0.97        30
+ -TD.A21-S14       1.00      0.93      0.97        30
+ -TD.A22-S12       0.88      1.00      0.94        30
+ -TD.A22-S13       1.00      0.93      0.97        30
+ -TD.A22-S14       1.00      0.93      0.97        30
+ -TD.A23-A01       0.97      0.97      0.97        30
+ -TD.A23-S02       1.00      1.00      1.00        30
+ -TD.A23-S07       0.97      0.97      0.97        30
+ -TD.A24-A01       1.00      0.90      0.95        30
+ -TD.A24-S02       1.00      1.00      1.00        30
+ -TD.A24-S07       0.97      1.00      0.98        30
+
+    accuracy                           0.96       840
+   macro avg       0.96      0.96      0.96       840
+weighted avg       0.96      0.96      0.96       840
+
+STS:
+accuracy STS: 0.519
+average time: 201.16 ms
+average RAM: -0.07 MB

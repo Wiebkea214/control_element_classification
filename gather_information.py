@@ -51,7 +51,7 @@ def plot_values_from_files(file_paths, search_string, save_path):
 
                         values.append(value)
                         units.append(unit)
-                        labels.append(label[11:len(label) - 14])
+                        labels.append(label[:len(label)])
                         break
 
     # Check units
