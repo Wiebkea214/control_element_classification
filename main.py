@@ -143,7 +143,7 @@ def main(cab, k, feat, kernel, path_train, dir_name, config, c):
 
     if "gather_information" in config:
         # Gather information for evaluation
-        keyword = "final"
+        keyword = "allCabs"
         addition = ""
         gather_pictures(keyword, addition, gather_path)
         gather_log(keyword, "cross validation score", addition, gather_path)
@@ -184,7 +184,7 @@ c = [0.001, 0.01, 0.1, 0.5, 1, 5]
 
 #config_x = "train_svm, evaluate_kernel"
 #config_x = "gather_top-k"
-config_x = "train_svm, evaluate_model"
+config_x = "train_svm, evaluate_model, gather_information"
 #config_x = "analyse_sts"
 #config_x = "gather_information"
 
