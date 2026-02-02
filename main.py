@@ -143,7 +143,7 @@ def main(cab, k, feat, kernel, path_train, dir_name, config, c):
 
     if "gather_information" in config:
         # Gather information for evaluation
-        keyword = "allCabs"
+        keyword = "c="
         addition = ""
         gather_pictures(keyword, addition, gather_path)
         gather_log(keyword, "cross validation score", addition, gather_path)
