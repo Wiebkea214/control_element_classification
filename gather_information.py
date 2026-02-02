@@ -157,14 +157,18 @@ def gather_pictures(keyword, addition, root):
         if keyword:
             paths_filtered = []
             for path in paths:
-                if keyword in str(path):
-                    paths_filtered.append(path)
+                if path.exists():
+                    if keyword in str(path):
+                        paths_filtered.append(path)
+                    else: pass
                 else: pass
             paths = paths_filtered
 
-        show_images_in_one_figure(image_paths=paths, title=f"Comparison: {filename}", caption_mode="folder",
-                                  max_image_size=(1200, 1200), tight_layout=True, dpi=200,
-                                  save_path=root / f"vergleich_allCabs_bilder_{addition}_{filename}")
+        if paths:
+            show_images_in_one_figure(image_paths=paths, title=f"Comparison: {filename}", caption_mode="folder",
+                                      max_image_size=(1200, 1200), tight_layout=True, dpi=200,
+                                      save_path=root / f"vergleich_allCabs_bilder_{addition}_{filename}")
+        else: pass
 
 
 ########################## Cross validation gathering ##############################

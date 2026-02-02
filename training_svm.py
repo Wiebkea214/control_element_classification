@@ -108,7 +108,7 @@ def train_svm(x, y, kernel, eval_dir):
     print(report)
 
 
-def evaluate_svm(x, y, eval_dir, kernel):
+def evaluate_svm(x, y, eval_dir, kernel, c):
     print("\n--- Start training of SVM ---")
     encoder = LabelEncoder()
     scaler = StandardScaler()
@@ -129,7 +129,7 @@ def evaluate_svm(x, y, eval_dir, kernel):
     if kernel == "poly":
         svm = SVC(kernel="poly", C=90, degree=1, gamma="scale", probability=True, random_state=42)
     else:
-        svm = SVC(kernel="linear", C=10, probability=True, random_state=42)
+        svm = SVC(kernel="linear", C=c, probability=True, random_state=42)
 
     ############# Set preconditions for time and load analysis ##################
     process = psutil.Process()
@@ -190,11 +190,11 @@ def evaluate_svm(x, y, eval_dir, kernel):
         os.makedirs(eval_dir)
 
     ### Perform evaluation SVM
-    cross_val = 0 #np.mean(cross_val_score(svm, x_train_scaled, y_train_str, cv=5))
+    cross_val = np.mean(cross_val_score(svm, x_train_scaled, y_train_str, cv=5))
     r = 0 #permutation_importance(svm, x_train_scaled, y_train_str, n_repeats=30, random_state=0)
     analysis_cpu_usage(interval, train_start, train_end, pred_start, pred_end, cpu_start, cpu_usage, timestamps, eval_dir)
     analysis_performance(y_test_num, y_pred, encoder, eval_dir)
-    #analysis_conf_matrix(y_test_num, y_pred, encoder, eval_dir, "confusion_matrix_svm.png")
+    analysis_conf_matrix(y_test_num, y_pred, encoder, eval_dir, "confusion_matrix_svm.png")
     analysis_learning(train_sizes, train_scores, test_scores, eval_dir)
     ###################################################################################
 
