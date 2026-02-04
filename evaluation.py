@@ -165,7 +165,7 @@ def analysis_kernels(x, y, path_dir):
 
     ### Linear kernel ###
     param_grid_linear = {"kernel": ["linear"],
-                         "C": [0.1, 1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
+                         "C": [0.01, 0.1, 1, 10, 100]}
     model_linear = GridSearchCV(SVC(), param_grid_linear, cv=5)
     model_linear.fit(x_train, y_train)
     results["Linear"] = model_linear.score(x_test, y_test)
@@ -173,7 +173,7 @@ def analysis_kernels(x, y, path_dir):
 
     ### RBF kernel ###
     param_grid_rbf = {"kernel": ["rbf"],
-                          "C": [0.1, 1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100], "gamma": ["scale", "auto"]}
+                          "C": [0.01, 0.1, 1, 10, 100], "gamma": ["scale", "auto"]}
     model_rbf = GridSearchCV(SVC(), param_grid_rbf, cv=5)
     model_rbf.fit(x_train, y_train)
     results["RBF"] = model_rbf.score(x_test, y_test)
@@ -181,7 +181,7 @@ def analysis_kernels(x, y, path_dir):
 
     ### Sigmoid kernel ###
     param_grid_sig = {"kernel": ["sigmoid"],
-                      "C": [0.1, 1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100], "gamma": ["scale", "auto"]}
+                      "C": [0.01, 0.1, 1, 10, 100], "gamma": ["scale", "auto"]}
     model_sig = GridSearchCV(SVC(), param_grid_sig, cv=5)
     model_sig.fit(x_train, y_train)
     results["Sigmoid"] = model_sig.score(x_test, y_test)
@@ -189,7 +189,7 @@ def analysis_kernels(x, y, path_dir):
 
     ### Poly kernel ###
     param_grid_poly = {"kernel": ["poly"],
-                       "C": [0.1, 1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100], "gamma": ["scale", "auto"],
+                       "C": [0.01, 0.1, 1, 10, 100], "gamma": ["scale", "auto"],
                        "degree": [1, 2, 3, 4]}
     model_poly = GridSearchCV(SVC(), param_grid_poly, cv=5)
     model_poly.fit(x_train, y_train)
@@ -232,8 +232,7 @@ def analysis_kernels(x, y, path_dir):
     plt.close()
 
 
-def analysis_sts(path_dir, embedding, persistent_dir):
-    path_train = f"F:\\OneDrive\\Masterarbeit\\FTS Daten\\Training\\TRAXX_AC3_Training_allCabs_7class_cnt100.xlsx"
+def analysis_sts(path_dir, path_train, embedding, persistent_dir):
     pers_dir_cab1 = persistent_dir[0]
     pers_dir_cab2 = persistent_dir[1]
 

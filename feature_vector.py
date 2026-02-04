@@ -44,81 +44,83 @@ def build_feature_vector(embedding, persistent_dir, text, cab, k, feat):
     cosine_all = []
 
     if found:
-        for sts_candidate, sts_score in candidates_top_k:
-            sts_emb = np.array(embedding.embed_query(str(sts_candidate.page_content)))
-            cosine_score = cosine_similarity([text_emb], [sts_emb])[0][0]
-            cosine_scaled = (cosine_score + 1) / 2
+        if feat != 0:
+            for sts_candidate, sts_score in candidates_top_k:
+                sts_emb = np.array(embedding.embed_query(str(sts_candidate.page_content)))
+                cosine_score = cosine_similarity([text_emb], [sts_emb])[0][0]
+                cosine_scaled = (cosine_score + 1) / 2
+
+                '''
+                if feat == 2 or feat == 6:
+                    features.append(sts_score)
+                    features.append(cosine_score)
+                '''
+                if feat != 0:
+                    features.append(sts_score)
+
+                sts_all.append(sts_score)
+                weighted_emb_all.extend([sts_score * entry for entry in sts_emb])
+                #cosine_all.append(cosine_scaled)
+
+            #mean_cos = np.mean(cosine_all, axis=0)
+            #var_cos = np.var(cosine_all, axis=0)
+            mean_sts = np.mean(sts_all, axis=0)
+            var_sts = np.var(sts_all, axis=0)
+            min_sts = np.min(sts_all, axis=0)
+            max_sts = np.max(sts_all, axis=0)
+            range_sts = (max_sts - min_sts)
+            rel_sts = (sts_all[0] + 0.001) / (sts_all[1] + 0.001)  # addition of 0.001 to prevent zero division
+            weight_emb = np.sum(weighted_emb_all)
 
             '''
-            if feat == 2 or feat == 6:
-                features.append(sts_score)
-                features.append(cosine_score)
+            if feat == 6:
+                features.extend([mean_sts, var_sts, mean_cos, var_cos])
             '''
-            if feat is not 0:
-                features.append(sts_score)
 
-            sts_all.append(sts_score)
-            weighted_emb_all.extend([sts_score * entry for entry in sts_emb])
-            #cosine_all.append(cosine_scaled)
+            if feat == 9:
+                features.extend([weight_emb, mean_sts, var_sts, min_sts, max_sts, range_sts, rel_sts])
+                features.extend(text_emb)
 
-        #mean_cos = np.mean(cosine_all, axis=0)
-        #var_cos = np.var(cosine_all, axis=0)
-        mean_sts = np.mean(sts_all, axis=0)
-        var_sts = np.var(sts_all, axis=0)
-        min_sts = np.min(sts_all, axis=0)
-        max_sts = np.max(sts_all, axis=0)
-        range_sts = (max_sts - min_sts)
-        rel_sts = (sts_all[0] + 0.001) / (sts_all[1] + 0.001)  # addition of 0.001 to prevent zero division
-        weight_emb = np.sum(weighted_emb_all)
+            '''
+            if feat == 1:
+                features.extend([weight_emb, mean_sts, var_sts, min_sts, max_sts, range_sts, rel_sts])
+                features.extend(text_emb)
+            elif feat == 2:
+                features.extend([weight_emb, var_sts, min_sts, max_sts, range_sts, rel_sts])
+                features.extend(text_emb)
+            elif feat == 3:
+                features.extend([weight_emb, mean_sts, min_sts, max_sts, range_sts, rel_sts])
+                features.extend(text_emb)
+            elif feat == 4:
+                features.extend([weight_emb, mean_sts, var_sts, max_sts, range_sts, rel_sts])
+                features.extend(text_emb)
+            elif feat == 5:
+                features.extend([weight_emb, mean_sts, var_sts, min_sts, range_sts, rel_sts])
+                features.extend(text_emb)
+            elif feat == 6:
+                features.extend([weight_emb, mean_sts, var_sts, min_sts, max_sts, rel_sts])
+                features.extend(text_emb)
+            elif feat == 7:
+                features.extend([weight_emb, mean_sts, var_sts, min_sts, max_sts, range_sts])
+                features.extend(text_emb)
+            elif feat == 8:
+                features.extend([weight_emb, mean_sts, var_sts, min_sts, max_sts, range_sts, rel_sts])
+            elif feat == 9:
+                features.extend([mean_sts, var_sts, min_sts, max_sts, range_sts, rel_sts])
+                features.extend(text_emb)
+            elif feat == 23:
+                features.extend([weight_emb, min_sts, max_sts, range_sts, rel_sts])
+                features.extend(text_emb)
+            elif feat == 45:
+                features.extend([weight_emb, mean_sts, var_sts, range_sts, rel_sts])
+                features.extend(text_emb)
+            elif feat == 67:
+                features.extend([weight_emb, mean_sts, var_sts, min_sts, max_sts])
+                features.extend(text_emb)
+            '''
 
-        '''
-        if feat == 6:
-            features.extend([mean_sts, var_sts, mean_cos, var_cos])
-        '''
-        if feat == 0:
+        else:
             features.extend(text_emb)
-
-        if feat == 9:
-            features.extend([weight_emb, mean_sts, var_sts, min_sts, max_sts, range_sts, rel_sts])
-            features.extend(text_emb)
-
-        '''
-        if feat == 1:
-            features.extend([weight_emb, mean_sts, var_sts, min_sts, max_sts, range_sts, rel_sts])
-            features.extend(text_emb)
-        elif feat == 2:
-            features.extend([weight_emb, var_sts, min_sts, max_sts, range_sts, rel_sts])
-            features.extend(text_emb)
-        elif feat == 3:
-            features.extend([weight_emb, mean_sts, min_sts, max_sts, range_sts, rel_sts])
-            features.extend(text_emb)
-        elif feat == 4:
-            features.extend([weight_emb, mean_sts, var_sts, max_sts, range_sts, rel_sts])
-            features.extend(text_emb)
-        elif feat == 5:
-            features.extend([weight_emb, mean_sts, var_sts, min_sts, range_sts, rel_sts])
-            features.extend(text_emb)
-        elif feat == 6:
-            features.extend([weight_emb, mean_sts, var_sts, min_sts, max_sts, rel_sts])
-            features.extend(text_emb)
-        elif feat == 7:
-            features.extend([weight_emb, mean_sts, var_sts, min_sts, max_sts, range_sts])
-            features.extend(text_emb)
-        elif feat == 8:
-            features.extend([weight_emb, mean_sts, var_sts, min_sts, max_sts, range_sts, rel_sts])
-        elif feat == 9:
-            features.extend([mean_sts, var_sts, min_sts, max_sts, range_sts, rel_sts])
-            features.extend(text_emb)
-        elif feat == 23:
-            features.extend([weight_emb, min_sts, max_sts, range_sts, rel_sts])
-            features.extend(text_emb)
-        elif feat == 45:
-            features.extend([weight_emb, mean_sts, var_sts, range_sts, rel_sts])
-            features.extend(text_emb)
-        elif feat == 67:
-            features.extend([weight_emb, mean_sts, var_sts, min_sts, max_sts])
-            features.extend(text_emb)
-        '''
 
         top1 = candidates_top_k[0][0]
         dim = len(features)
