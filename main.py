@@ -8,12 +8,13 @@ from feature_vector import *
 
 from datetime import datetime
 from langchain_huggingface import HuggingFaceEmbeddings
+import matplotlib.pyplot as plt
 import winsound
 
 ########################## Init #############################
 
 #if __name__ == "__main__":
-def main(cab, k, feat, kernel, path_train, dir_name, config):
+def main(cab, k, feat, kernel, path_train, dir_name, config, c):
     import multiprocessing
     multiprocessing.freeze_support()  # important for Windows
 
@@ -24,11 +25,12 @@ def main(cab, k, feat, kernel, path_train, dir_name, config):
     #feat = 9
     test_step = [""]
     path_fts = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\TRAXX_AC3_ISR__Control_front_and_tail_lights.xlsx"
-    path_bmv_cab1 = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\Labels\\BMV_Labels_cab1_top14.xlsx"
-    path_bmv_cab2 = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\Labels\\BMV_Labels_cab2_top14.xlsx"
+    path_bmv_cab1 = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\Labels\\BMV_Labels_cab1_14class.xlsx"
+    path_bmv_cab2 = "F:\\OneDrive\\Masterarbeit\\FTS Daten\\Labels\\BMV_Labels_cab2_14class.xlsx"
     #path_train = f"F:\\OneDrive\\Masterarbeit\\FTS Daten\\Training\\TRAXX_AC3_Training_{cab}_7class_cnt100.xlsx"
     #dir_name = f"evaluation_{cab}_top{k}_7class_{feat}feat_scaled_cnt100"
     gather_path = Path(os.path.join(os.path.dirname(os.path.abspath(__file__)), "Evaluation auto"))
+    top_k_path = Path(os.path.join(os.path.dirname(os.path.abspath(__file__)), "Evaluation Top-k"))
     eval_dir = str(os.path.join(os.path.join(os.path.dirname(os.path.abspath(__file__)), "Evaluation auto"), dir_name))
 
     # Available configs: load_fts, edit_db, similarity, train_svm, train_svm_only, evaluate
@@ -81,22 +83,45 @@ def main(cab, k, feat, kernel, path_train, dir_name, config):
 
     if "train_svm" in config:
         txt = []
-        x, y, y_sts, sts_time, sts_mem, dim = get_traindata(path_train,[persistent_dir_cab1, persistent_dir_cab2], embedding_model, cab, k, feat)
+        x, y, y_sts, sts_time, sts_mem, dim = get_traindata(path_train,[persistent_dir_cab1, persistent_dir_cab2], embedding_model, k, feat)
 
         if "train_svm_only" in config:
-            train_svm(x, y, cab, kernel, eval_dir)
+            train_svm(x, y, kernel, eval_dir)
 
         if "evaluate_model" in config:
             # SVM analysis
-            svm_acc, report, train_time, pred_time, mem_train, mem_pred, cross_val, r = evaluate_svm(x, y, cab, eval_dir, kernel)
+
+            data = {
+                "cross_val" : [],
+                "svm_val" : [],
+                "train_time" : [],
+                "mem_train" : [],
+                "pred_time" : [],
+                "mem_pred" : [],
+                "dim" : []
+            }
+            report = ""
+
+            for i in range(1):
+                svm_acc, report, train_time, pred_time, mem_train, mem_pred, cross_val, r = evaluate_svm(x, y, eval_dir, kernel, c)
+                data["cross_val"].append(cross_val)
+                data["svm_val"].append(svm_acc)
+                data["train_time"].append(train_time)
+                data["pred_time"].append(pred_time)
+                data["mem_train"].append(mem_train)
+                data["mem_pred"].append(mem_pred)
+                data["dim"].append(dim)
+
+            means = {key: sum(values) / len(values) for key, values in data.items()}
+
             txt.append("SVM:" +
-                    "\ncross validation score: " + str(round(cross_val*100, 2)) + " %" +
-                    "\naccuracy SVM: " + str(round(svm_acc*100, 2)) + " %" +
-                    "\ntrain time: " + str(round(train_time * 1000, 2)) + " ms" +
-                    "\ntrain RAM: " + str(round(mem_train, 2)) + " MB" +
-                    "\ninference time: " + str(round(pred_time * 1000, 2)) + " ms" +
-                    "\ninference RAM: " + str(round(mem_pred, 2)) + " MB" +
-                    "\nvector dimensions: " + str(dim) + " Features" +
+                    "\ncross validation score: " + str(round(means["cross_val"]*100, 2)) + " %" +
+                    "\naccuracy SVM: " + str(round(means["svm_val"]*100, 2)) + " %" +
+                    "\ntrain time: " + str(round(means["train_time"] * 1000, 2)) + " ms" +
+                    "\ntrain RAM: " + str(round(means["mem_train"], 2)) + " MB" +
+                    "\ninference time: " + str(round(means["pred_time"] * 1000, 2)) + " ms" +
+                    "\ninference RAM: " + str(round(means["mem_pred"], 2)) + " MB" +
+                    "\nvector dimensions: " + str(means["dim"]) + " Features" +
                     "\nreport:" + report)
             print(report)
 
@@ -114,18 +139,26 @@ def main(cab, k, feat, kernel, path_train, dir_name, config):
                 f.write("\n".join(txt))
 
         if "evaluate_kernel" in config:
-            analysis_kernels(x, y, cab, gather_path, method="grid")
+            analysis_kernels(x, y, gather_path)
 
     if "gather_information" in config:
         # Gather information for evaluation
-        gather_pictures("Kernel", "kernels", gather_path, cab)
-        gather_log("Kernel", "cross validation score", "kernels", gather_path, cab)
-        gather_log("Kernel", "accuracy SVM", "kernels", gather_path, cab)
-        gather_log("Kernel", "train time", "kernels", gather_path, cab)
-        gather_log("Kernel", "train RAM", "kernels", gather_path, cab)
-        gather_log("Kernel", "inference time", "kernels", gather_path, cab)
-        gather_log("Kernel", "inference RAM", "kernels", gather_path, cab)
-        gather_log("Kernel", "vector dimensions", "kernels", gather_path, cab)
+        keyword = "cnt150"
+        addition = ""
+        gather_pictures(keyword, addition, gather_path)
+        gather_log(keyword, "cross validation score", addition, gather_path)
+        gather_log(keyword, "accuracy SVM", addition, gather_path)
+        gather_log(keyword, "train time", addition, gather_path)
+        gather_log(keyword, "train RAM", addition, gather_path)
+        gather_log(keyword, "inference time", addition, gather_path)
+        gather_log(keyword, "inference RAM", addition, gather_path)
+        gather_log(keyword, "vector dimensions", addition, gather_path)
+
+    if "gather_top-k" in config:
+        gather_top_k(top_k_path)
+
+    if "analyse_sts" in config:
+        analysis_sts(gather_path, path_train, embedding_model, [persistent_dir_cab1, persistent_dir_cab2])
 
     if "predict" in config:
         svm_model = joblib.load("svm_model_{cab}_{time_now}.joblib")
@@ -136,25 +169,34 @@ def main(cab, k, feat, kernel, path_train, dir_name, config):
         y_pred = label_encoder.inverse_transform(y_pred_encoded)
         print(f"\nSVM prediction: {y_pred[0]}")
 
+    plt.close()
     winsound.Beep(600, 500)
     print("--- Finished ---")
 
 #######################################################################################################
 
 # Automatic evaluation execution
-cabs = ["cab1", "cab2"]
-top_xs = [3, 5, 7]
-feats = [2, 6, 8, 9]
-kernels = ["rbf", "linear", "poly", "sigmoid"]
-config_x = "train_svm, evaluate_kernel"
-#config_x = "train_svm, evaluate_model"
+top_xs = [3, 5, 7, 10, 10000]
+feats = [0, 9]
+classes = [4,8,12,16,20,24]
+kernels = ["linear", "poly"]
+
+#config_x = "train_svm, evaluate_kernel"
+#config_x = "gather_top-k"
+config_x = "train_svm, evaluate_model"
+#config_x = "analyse_sts"
 #config_x = "gather_information"
 
-top_x = 3
+cab_x = ""
+class_x = 28
+top_x = 5
 feat_x = 9
+cnt = 250
 kernel_x = "linear"
+c_x = 10
 
-for cab_x in cabs:
-    path_train_x = f"F:\\OneDrive\\Masterarbeit\\FTS Daten\\Training\\TRAXX_AC3_Training_{cab_x}_7class_cnt100.xlsx"
-    dir_name_x = f"evaluation_{cab_x}_top{top_x}_7class_{feat_x}feat_{kernel_x}Kernel_scaled_cnt100"
-    main(cab_x, top_x, feat_x, kernel_x, path_train_x, dir_name_x, config_x)
+for class_x in classes:
+    path_train_x = f"F:\\OneDrive\\Masterarbeit\\FTS Daten\\Training\\TRAXX_AC3_Training_allCabs_{class_x}class_cnt{cnt}.xlsx"
+    dir_name_x = f"evaluation_allCabs_top{top_x}_{class_x}class_{feat_x}feat_{kernel_x}Kernel_cnt{cnt}"
+    print(f"----- Start with param feat_x={feat_x}, top_xs={top_x}, class={class_x}, c={c_x}, cnt={cnt} -----")
+    main(cab_x, top_x, feat_x, kernel_x, path_train_x, dir_name_x, config_x, c_x)

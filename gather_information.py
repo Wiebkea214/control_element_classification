@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 import matplotlib.pyplot as plt
+import numpy as np
 from PIL import Image
 
 
@@ -50,7 +51,7 @@ def plot_values_from_files(file_paths, search_string, save_path):
 
                         values.append(value)
                         units.append(unit)
-                        labels.append(label[11:len(label) - 14])
+                        labels.append(label[:len(label)])
                         break
 
     # Check units
@@ -69,8 +70,10 @@ def plot_values_from_files(file_paths, search_string, save_path):
     if save_path:
         save_path = Path(save_path)
         save_path.parent.mkdir(parents=True, exist_ok=True)
-        plt.savefig(save_path)
+        plt.savefig(save_path, bbox_inches="tight")
         print(f"Summary pics saved under: {save_path}")
+
+    plt.close()
 
 
 ########################## Plot gathering ##########################################
@@ -140,12 +143,13 @@ def show_images_in_one_figure(
     if save_path:
         save_path = Path(save_path)
         save_path.parent.mkdir(parents=True, exist_ok=True)
-        fig.savefig(save_path, dpi=dpi)
+        fig.savefig(save_path, bbox_inches="tight")
         print(f"Summary pics saved under: {save_path}")
+    plt.close()
 
 
-def gather_pictures(keyword, addition, root, cab):
-    filenames = ["confusion_matrix_sts.png", "confusion_matrix_svm.png", "cpu_usage.png", "learning_curve.png", "performance.png", "kernel_analysis.png"]
+def gather_pictures(keyword, addition, root):
+    filenames = ["confusion_matrix_sts.png", "confusion_matrix_svm.png", "cpu_usage.png", "learning_curve.png", "performance.png"]
 
     for filename in filenames:
         paths = find_file_with_same_name(root_dir=root, filename=filename, recursive=True, sort_by="folder")
@@ -153,19 +157,23 @@ def gather_pictures(keyword, addition, root, cab):
         if keyword:
             paths_filtered = []
             for path in paths:
-                if keyword in str(path) and cab in str(path):
-                    paths_filtered.append(path)
+                if path.exists():
+                    if keyword in str(path):
+                        paths_filtered.append(path)
+                    else: pass
                 else: pass
             paths = paths_filtered
 
-        show_images_in_one_figure(image_paths=paths, title=f"Comparison: {filename}", caption_mode="folder",
-                                  max_image_size=(1200, 1200), tight_layout=True, dpi=200,
-                                  save_path=root / f"vergleich_{cab}_bilder_{addition}_{filename}")
+        if paths:
+            show_images_in_one_figure(image_paths=paths, title=f"Comparison: {filename}", caption_mode="folder",
+                                      max_image_size=(1200, 1200), tight_layout=True, dpi=200,
+                                      save_path=root / f"vergleich_allCabs_bilder_{addition}_{filename}")
+        else: pass
 
 
 ########################## Cross validation gathering ##############################
 
-def gather_log(keyword, search_string, addition, root, cab):
+def gather_log(keyword, search_string, addition, root):
     filename = "evaluation_log.txt"
 
     paths = find_file_with_same_name(root_dir=root, filename=filename, recursive=True, sort_by="folder")
@@ -173,13 +181,74 @@ def gather_log(keyword, search_string, addition, root, cab):
     if keyword:
         paths_filtered = []
         for path in paths:
-            if keyword in str(path) and cab in str(path):
+            if keyword in str(path):
                 paths_filtered.append(path)
             else:
                 pass
         paths = paths_filtered
 
-    plot_values_from_files(paths, search_string, save_path=root / f"vergleich_{cab}_{addition}_{search_string}")
+    plot_values_from_files(paths, search_string, save_path=root / f"vergleich_allCabs_{addition}_{search_string}")
+
+
+def gather_top_k(root):
+    filename = "evaluation_log.txt"
+    save_path = os.path.join(root, "vergleich_top-k_analysis")
+
+    paths = find_file_with_same_name(root_dir=root, filename=filename, recursive=True, sort_by="folder")
+
+    top_k = []
+    cv = []
+    acc = []
+
+    for path in paths:
+        folder = os.path.basename(os.path.dirname(path))
+        match = re.search(r"(top[^_]+)", folder)
+        if match:
+            k = match.group(0)
+            top_k.append(k)
+        else:
+            break
+
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
+                if "cross validation score" in line:
+                    # extract float number and unit
+                    match = re.search(r":\s*([0-9]*\.?[0-9]+)\s*([A-Za-z]+|%)", line)
+                    if match:
+                        value = float(match.group(1))
+                        cv.append(value)
+
+                if "accuracy SVM" in line:
+                    # extract float number and unit
+                    match = re.search(r":\s*([0-9]*\.?[0-9]+)\s*([A-Za-z]+|%)", line)
+                    if match:
+                        value = float(match.group(1))
+                        acc.append(value)
+
+                if "cross validation score" in line and "accuracy SVM" in line:
+                    break
+
+    x = np.arange(len(top_k))
+
+    # Plots
+    plt.ion()
+    plt.figure(figsize=(10, 6))
+    plt.bar(x, cv, width=0.25, label="CV-Score")
+    plt.bar([i + 0.25 for i in x], acc, width=0.25, label="Accuracy")
+    plt.ylim(min(cv + acc)-0.5 , max(cv + acc)+0.5)
+    plt.xticks([i + 0.25 for i in x], top_k, rotation=45)
+    plt.xlabel("")
+    plt.ylabel("Score [%]")
+    plt.title("Top-k Vergleich")
+    plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
+    plt.tight_layout()
+
+    if save_path:
+        save_path = Path(save_path)
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(save_path, bbox_inches="tight")
+        print(f"Summary pics saved under: {save_path}")
+    plt.close()
 
 ####################################################################################
 ######################### Single execution #########################################

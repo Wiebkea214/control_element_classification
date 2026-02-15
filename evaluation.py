@@ -1,14 +1,18 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+import pandas as pd
 import psutil
-import os
+import re
 import time
 
+from setup_vector_database import *
+from pathlib import Path
+from collections import Counter
+
 from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
-from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, train_test_split
+from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.svm import SVC
-from scipy.stats import uniform
 
 ###########################################
 
@@ -37,9 +41,7 @@ def data_plot(data, title):
     plt.ylabel("sim score")
     plt.title(title)
     plt.legend()
-
-    # Diagramm anzeigen
-    plt.show()
+    plt.close()
 
 
 def monitor_cpu(interval, cpu_usage, stop_event, timestamps, start_time):
@@ -55,16 +57,15 @@ def monitor_cpu(interval, cpu_usage, stop_event, timestamps, start_time):
 
 
 def analysis_cpu_usage(interval, train_start, train_end, pred_start, pred_end, cpu_start, cpu_usage, timestamps, path_dir):
-    n = len(cpu_usage)
     training_start = train_start - cpu_start
     training_end = train_end - cpu_start
     prediction_start = pred_start - cpu_start
     prediction_end = pred_end - cpu_start
 
-    colors = ['r' if training_start <= t <= training_end else 'b' for t in timestamps]
-
     plt.ion()
-    plt.figure(figsize=(10,6))
+    fig = plt.figure(figsize=(10,6))
+    title_size = fig.get_figwidth() * 1
+    plt.ylim(0, 100)
     plt.plot(timestamps, cpu_usage, color="blue", marker=".", label="CPU-Load")
 
     if training_start and training_end:
@@ -81,12 +82,13 @@ def analysis_cpu_usage(interval, train_start, train_end, pred_start, pred_end, c
         plt.plot(red_times, red_usage, color="green", marker=".", label="Prediction")
         plt.axvspan(prediction_start, prediction_end, color="green", alpha=0.1)
 
-    plt.title("CPU-load during training")
+    plt.title("CPU-load during training", fontsize=title_size)
     plt.xlabel(f"measure points (all {interval*1000}ms)")
     plt.ylabel("CPU-load (%)")
     plt.grid(True)
     plt.legend()
-    plt.savefig(os.path.join(path_dir, "cpu_usage.png"))
+    plt.savefig(os.path.join(path_dir, "cpu_usage.png"), bbox_inches="tight")
+    plt.close()
 
 
 def analysis_performance(y_test, y_pred, encoder, path_dir):
@@ -100,16 +102,19 @@ def analysis_performance(y_test, y_pred, encoder, path_dir):
 
     # Plots
     plt.ion()
-    plt.figure(figsize=(10, 6))
+    fig = plt.figure(figsize=(10, 6))
+    title_size = fig.get_figwidth() * 1
     plt.bar(x, precision, width=0.25, label="Precision")
     plt.bar([i + 0.25 for i in x], recall, width=0.25, label="Recall")
     plt.bar([i + 0.50 for i in x], f1, width=0.25, label="F1-Score")
+    plt.ylim(0, 1)
     plt.xticks([i + 0.25 for i in x], class_names, rotation=45)
     plt.xlabel("Classes")
     plt.ylabel("Value")
-    plt.title("Precision, Recall and F1 per class")
-    plt.legend()
-    plt.savefig(os.path.join(path_dir, "performance.png"))
+    plt.title("Precision, Recall and F1 per class", fontsize=title_size)
+    plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
+    plt.savefig(os.path.join(path_dir, "performance.png"), bbox_inches="tight")
+    plt.close()
 
 
 def analysis_conf_matrix(y_test, y_pred, encoder, path_dir, filename):
@@ -121,12 +126,14 @@ def analysis_conf_matrix(y_test, y_pred, encoder, path_dir, filename):
     # Confusion matrix
     cm = confusion_matrix(y_test, y_pred)
 
-    plt.figure(figsize=(8,6))
+    fig = plt.figure(figsize=(8,6))
+    title_size = fig.get_figwidth() * 0.5
     sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=class_names, yticklabels=class_names)
-    plt.title("Confusion Matrix")
+    plt.title("Confusion Matrix", fontsize=title_size)
     plt.xlabel("Predicted classes")
     plt.ylabel("True classes")
-    plt.savefig(os.path.join(path_dir, filename))
+    plt.savefig(os.path.join(path_dir, filename), bbox_inches="tight")
+    plt.close()
 
 
 def analysis_learning(train_sizes, train_scores, test_scores, path_dir):
@@ -136,55 +143,73 @@ def analysis_learning(train_sizes, train_scores, test_scores, path_dir):
     test_std = np.std(test_scores, axis=1)
 
     plt.ion()
-    plt.figure(figsize=(8,6))
+    fig = plt.figure(figsize=(8,6))
+    title_size = fig.get_figwidth() * 1
     plt.plot(train_sizes, train_mean, 'o-', color="blue", label="Training Score")
     plt.plot(train_sizes, test_mean, 'o-', color="green", label="Validation Score")
     plt.fill_between(train_sizes, train_mean-train_std, train_mean+train_std, alpha=0.1, color="blue")
     plt.fill_between(train_sizes, test_mean-test_std, test_mean+test_std, alpha=0.1, color="green")
-    plt.title("Learning Curves (SVM)")
+    plt.title("Learning Curves (SVM)", fontsize=title_size)
     plt.xlabel("Training Size")
     plt.ylabel("Accuracy")
     plt.legend()
-    plt.savefig(os.path.join(path_dir, "learning_curve.png"))
+    plt.savefig(os.path.join(path_dir, "learning_curve.png"), bbox_inches="tight")
+    plt.close()
 
 
-def analysis_kernels(x, y, cab, path_dir, method="grid"):
+def analysis_kernels(x, y, path_dir):
+    print("--- Starting kernel analysis ---")
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42, stratify=y)
     results = {}
     best_params = {}
 
     ### Linear kernel ###
-    if method == "grid":
-        param_grid_linear = {"C": [0.1, 1, 10, 100]}
-        model_linear = GridSearchCV(SVC(kernel="linear"), param_grid_linear, cv=5)
-    else:
-        param_dist_linear = {"C": uniform(0.1, 100)}
-        model_linear = RandomizedSearchCV(SVC(kernel="linear"), param_dist_linear, n_iter=10, cv=5)
-
+    param_grid_linear = {"kernel": ["linear"],
+                         "C": [0.01, 0.1, 1, 10, 100]}
+    model_linear = GridSearchCV(SVC(), param_grid_linear, cv=5)
     model_linear.fit(x_train, y_train)
-    acc_linear = model_linear.score(x_test, y_test)
-    results["Linear"] = acc_linear
+    results["Linear"] = model_linear.score(x_test, y_test)
     best_params["Linear"] = model_linear.best_params_
 
     ### RBF kernel ###
-    if method == "grid":
-        param_grid_rbf = {"C": [0.1, 1, 10, 100], "gamma": ["scale", "auto"]}
-        model_rbf = GridSearchCV(SVC(kernel="rbf"), param_grid_rbf, cv=5)
-    else:
-        param_dist_rbf = {"C": uniform(0.1, 100), "gamma": uniform(0.0001, 1)}
-        model_rbf = RandomizedSearchCV(SVC(kernel="rbf"), param_dist_rbf, n_iter=20, cv=5)
-
+    param_grid_rbf = {"kernel": ["rbf"],
+                          "C": [0.01, 0.1, 1, 10, 100], "gamma": ["scale", "auto"]}
+    model_rbf = GridSearchCV(SVC(), param_grid_rbf, cv=5)
     model_rbf.fit(x_train, y_train)
-    acc_rbf = model_rbf.score(x_test, y_test)
-    results["RBF"] = acc_rbf
+    results["RBF"] = model_rbf.score(x_test, y_test)
     best_params["RBF"] = model_rbf.best_params_
+
+    ### Sigmoid kernel ###
+    param_grid_sig = {"kernel": ["sigmoid"],
+                      "C": [0.01, 0.1, 1, 10, 100], "gamma": ["scale", "auto"]}
+    model_sig = GridSearchCV(SVC(), param_grid_sig, cv=5)
+    model_sig.fit(x_train, y_train)
+    results["Sigmoid"] = model_sig.score(x_test, y_test)
+    best_params["Sigmoid"] = model_sig.best_params_
+
+    ### Poly kernel ###
+    param_grid_poly = {"kernel": ["poly"],
+                       "C": [0.01, 0.1, 1, 10, 100], "gamma": ["scale", "auto"],
+                       "degree": [1, 2, 3, 4]}
+    model_poly = GridSearchCV(SVC(), param_grid_poly, cv=5)
+    model_poly.fit(x_train, y_train)
+    results["Poly"] = model_poly.score(x_test, y_test)
+    best_params["Poly"] = model_poly.best_params_
+
+    ### All ###
+    param_grid = [param_grid_linear, param_grid_rbf, param_grid_sig, param_grid_poly]
+    grid = GridSearchCV(SVC(), param_grid, cv=5)
+    grid.fit(x_train, y_train)
+
+    print("--- Finished kernel analysis ---")
 
     # Plot results
     plt.ion()
-    plt.figure(figsize=(10,6))
-    bars = plt.bar(results.keys(), results.values(), color=["steelblue","orange"])
+    fig = plt.figure(figsize=(10,6))
+    title_size = fig.get_figwidth() * 1
+    bars = plt.bar(results.keys(), results.values())
     plt.ylabel("Accuracy")
-    plt.title(f"SVM Kernel Vergleich ({method.capitalize()} Search)")
+    plt.title(f"SVM Kernel Vergleich", fontsize=title_size)
     plt.ylim(0, 1)
 
     # Scores over bars
@@ -193,11 +218,77 @@ def analysis_kernels(x, y, cab, path_dir, method="grid"):
 
     # Parametertext
     param_text = ( f"Linear Kernel:\n{best_params['Linear']}"
-                   f"\n\nRBF Kernel:\n{best_params['RBF']}" )
+                   f"\n\nRBF Kernel:\n{best_params['RBF']}"
+                   f"\n\nSigmoid Kernel:\n{best_params['Sigmoid']}"
+                   f"\n\nPoly Kernel:\n{best_params['Poly']}"
+                   f"\n\n#1 Kernel:\n{grid.best_params_}")
 
     plt.text(1.05, 0.5, param_text, transform=plt.gca().transAxes, fontsize=10, verticalalignment="center",
              bbox=dict(facecolor="white", alpha=0.8))
 
     plt.grid(axis="y", linestyle="--", alpha=0.6)
     plt.tight_layout()
-    plt.savefig(os.path.join(path_dir, f"vergleich_{cab}_kernel_analysis.png"))
+    plt.savefig(os.path.join(path_dir, f"vergleich_allCabs_kernel_analysis.png"), bbox_inches="tight")
+    plt.close()
+
+
+def analysis_sts(path_dir, path_train, embedding, persistent_dir):
+    pers_dir_cab1 = persistent_dir[0]
+    pers_dir_cab2 = persistent_dir[1]
+
+    # Load excel file
+    if os.path.exists(path_train):
+        reader = pd.read_excel(path_train, engine='openpyxl')
+    else:
+        print(f"!!! File {path_train} not found")
+        return
+
+    positions = []
+
+    for i, line in reader.iterrows():
+        text = str(line["Text"])
+        correct_label = line["Label"]
+        cab = line["Cab"]
+
+        text = re.sub(r"[^a-zA-Z0-9]", " ", text.strip().lower())
+        text = f"{text}. In {cab}"
+
+        # Calculate STS score
+        results = []
+        found = True
+
+        if cab == 'cab1' or cab == 'no cab':
+            results = calc_similarity(text, pers_dir_cab1, embedding, 100)
+        elif cab == 'cab2':
+            results = calc_similarity(text, pers_dir_cab2, embedding, 100)
+        else:
+            found = False
+
+        if found:
+            retrieved_ids = []
+            for doc in results:
+                id = doc[0].metadata["id"]
+                retrieved_ids.append(id)
+
+            if correct_label in retrieved_ids:
+                pos = retrieved_ids.index(correct_label) + 1
+            else:
+                pos = None
+            positions.append(pos)
+
+    # Plot data
+    top_k = 15
+    normalized = [p if p is not None else top_k + 1 for p in positions]
+
+    counts = Counter(normalized)
+    labels = list(range(1, top_k + 2))
+    values = [counts.get(pos, 0) for pos in labels]
+    x_labels = [str(i) for i in range(1, top_k + 1)] + ["Nicht gefunden"]
+    plt.figure(figsize=(12, 6))
+    plt.bar(x_labels, values, color="steelblue")
+    plt.title("Analyse Top-k STS-Ergebnissen")
+    plt.xlabel("Trefferposition")
+    plt.ylabel("Anzahl")
+    plt.tight_layout()
+    plt.savefig(os.path.join(path_dir, f"vergleich_allCabs__sts_analysis.png"), bbox_inches="tight")
+    plt.close()
