@@ -1,0 +1,33 @@
+SVM:
+cross validation score: 95.09 %
+accuracy SVM: 95.0 %
+train time: 345.92 ms
+train RAM: 1.95 MB
+inference time: 26.91 ms
+inference RAM: 0.39 MB
+vector dimensions: 394 Features
+report:              precision    recall  f1-score   support
+
+     -GC.S01       1.00      0.90      0.95        20
+     -GC.S02       0.86      0.95      0.90        20
+     -GC.S03       0.91      1.00      0.95        20
+     -GC.S04       0.94      0.80      0.86        20
+     -HC.S01       1.00      1.00      1.00        20
+     -HC.S02       1.00      0.85      0.92        20
+     -HC.S03       1.00      1.00      1.00        20
+     -HC.S04       0.86      0.90      0.88        20
+ -TD.A21-A01       0.95      0.95      0.95        20
+ -TD.A22-A01       1.00      0.95      0.97        20
+ -TD.A23-A01       0.95      1.00      0.98        20
+ -TD.A23-S02       1.00      1.00      1.00        20
+ -TD.A24-A01       0.87      1.00      0.93        20
+ -TD.A24-S02       1.00      1.00      1.00        20
+
+    accuracy                           0.95       280
+   macro avg       0.95      0.95      0.95       280
+weighted avg       0.95      0.95      0.95       280
+
+STS:
+accuracy STS: 0.674
+average time: 75.88 ms
+average RAM: -0.05 MB
