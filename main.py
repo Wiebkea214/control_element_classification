@@ -5,6 +5,7 @@ from training_svm import *
 from training_data_augmentation import *
 from gather_information import *
 from feature_vector import *
+from human_in_the_loop import *
 
 from datetime import datetime
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -193,6 +194,14 @@ def main(cab, k, feat, kernel, c, path_train, dir_name, config, test_step):
 
             else:
                 print(f"\nSVM prediction is unsure: prediction={prediction} vs. STS={top1.metadata['id']} and confidence = {confidence}")
+                feedback = hitl_ui(prediction, confidence)
+
+                if feedback["status"] == "incorrect" and feedback["correct_label"]:
+                    # Save correct label in training excel
+                    save_fedback_to_excel(file_path=path_train, correct_label=feedback["correct_label"])
+                else:
+                    # no action, canceled/correct prediction
+                    pass
 
     plt.close()
     print("--- Finished ---")
