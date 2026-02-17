@@ -1,7 +1,6 @@
 import os
 import chromadb
 
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 
 

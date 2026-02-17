@@ -65,7 +65,7 @@ def get_traindata(path_train, persistent_dir, embedding, k, feat):
     return x, y, y_sts, sts_time, sts_mem, dim
 
 
-def train_svm(x, y, kernel, eval_dir):
+def train_svm(x, y, svm_dir):
     print("\n--- Start training of SVM ---")
     encoder = LabelEncoder()
     scaler = StandardScaler()
@@ -78,28 +78,28 @@ def train_svm(x, y, kernel, eval_dir):
     # Convert string classes to numeric classes
     encoder.fit(y_train_str)
     y_test_num = encoder.transform(y_test_str)
-    y_train_num = encoder.transform(y_train_str)
-    print("y_train_str: " + str(np.unique(y_train_str, return_counts=True)) + "\ny_train_num: " + str(np.unique(y_train_num, return_counts=True)))
 
     # Normalize vector
     x_train_scaled = scaler.fit_transform(x_train)
     x_test_scaled = scaler.transform(x_test)
 
-    # SVM setup (RBF-Kernel is standard)
-    if kernel == "poly":
-        svm = SVC(kernel="poly", C=90, degree=1, gamma="scale", probability=True, random_state=42)
-    else:
-        svm = SVC(kernel="linear", C=10, probability=True, random_state=42)
+    # SVM setup
+    svm = SVC(kernel="linear", C=10, random_state=42)
 
     # Training
     svm.fit(x_train_scaled, y_train_str)
 
     # Save model
-    joblib.dump(svm, f"svm_model_allCabs_{time_now}.joblib")
-    joblib.dump(encoder, f"encoder_allCabs_{time_now}.joblib")
+    save_model_path = os.path.join(svm_dir, f"svm_model_allCabs_{time_now}.joblib")
+    save_encoder_path = os.path.join(svm_dir, f"encoder_allCabs_{time_now}.joblib")
+    joblib.dump(svm, save_model_path)
+    joblib.dump(encoder, save_encoder_path)
+
+    joblib.dump(svm, f"svm_model.joblib")
+    joblib.dump(encoder, f"encoder.joblib")
     print("\n--- Finished training and saving of SVM ---")
 
-    # Prediction with test data
+    # Validate
     print("\n--- Start evaluation of model with test data ---")
     y_score = svm.decision_function(x_test_scaled)
     y_pred = np.argmax(y_score, axis=1)
@@ -129,7 +129,7 @@ def evaluate_svm(x, y, eval_dir, kernel, c):
     if kernel == "poly":
         svm = SVC(kernel="poly", C=90, degree=1, gamma="scale", probability=True, random_state=42)
     else:
-        svm = SVC(kernel="linear", C=c, probability=True, random_state=42)
+        svm = SVC(kernel="linear", C=c, random_state=42)
 
     ############# Set preconditions for time and load analysis ##################
     process = psutil.Process()

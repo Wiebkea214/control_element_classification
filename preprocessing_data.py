@@ -1,5 +1,8 @@
 import os
 
+import chromadb
+from chromadb import PersistentClient
+from langchain_chroma import Chroma
 import pandas as pd
 from langchain_core.documents import Document
 
@@ -91,3 +94,34 @@ def get_BMV(path_bmv):
     print(f"--- Finished reading and storing bmv ---")
 
     return docs_bmv # Should be written in txt file
+
+####################### Precheck for element nr. #####################
+
+def select_cab(cab, persistent_dir):
+    pers_dir_cab1 = persistent_dir[0]
+    pers_dir_cab2 = persistent_dir[1]
+
+    if cab == 'cab1' or cab == 'no cab':
+        return pers_dir_cab1
+    elif cab == 'cab2':
+        return pers_dir_cab2
+    else:
+        return 0
+
+
+def element_precheck(text, persistent_dir_cabx):
+    chroma_client = chromadb.PersistentClient(path=persistent_dir_cabx)
+    collection = chroma_client.get_collection(name="langchain")
+    dicts = collection.get()
+    ids = dicts["metadatas"]
+    result = 0
+
+    for item in ids:
+        if "id" in item and item["id"] in text:
+            result = item["id"]
+            break
+
+    if result:
+        return result
+    else:
+        return 0

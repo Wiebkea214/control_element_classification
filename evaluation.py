@@ -7,6 +7,7 @@ import re
 import time
 
 from setup_vector_database import *
+from preprocessing_data import *
 from pathlib import Path
 from collections import Counter
 
@@ -233,8 +234,6 @@ def analysis_kernels(x, y, path_dir):
 
 
 def analysis_sts(path_dir, path_train, embedding, persistent_dir):
-    pers_dir_cab1 = persistent_dir[0]
-    pers_dir_cab2 = persistent_dir[1]
 
     # Load excel file
     if os.path.exists(path_train):
@@ -253,28 +252,28 @@ def analysis_sts(path_dir, path_train, embedding, persistent_dir):
         text = re.sub(r"[^a-zA-Z0-9]", " ", text.strip().lower())
         text = f"{text}. In {cab}"
 
+        persistent_dir_cabx = select_cab(cab, persistent_dir)
+
         # Calculate STS score
         results = []
-        found = True
 
-        if cab == 'cab1' or cab == 'no cab':
-            results = calc_similarity(text, pers_dir_cab1, embedding, 100)
-        elif cab == 'cab2':
-            results = calc_similarity(text, pers_dir_cab2, embedding, 100)
+        if persistent_dir_cabx:
+            results = calc_similarity(text, persistent_dir_cabx, embedding, 1000)
         else:
-            found = False
+            print(f"!!! Matching vector-db not found with cab={cab} !!!")
+            return -1
 
-        if found:
-            retrieved_ids = []
-            for doc in results:
-                id = doc[0].metadata["id"]
-                retrieved_ids.append(id)
 
-            if correct_label in retrieved_ids:
-                pos = retrieved_ids.index(correct_label) + 1
-            else:
-                pos = None
-            positions.append(pos)
+        retrieved_ids = []
+        for doc in results:
+            id = doc[0].metadata["id"]
+            retrieved_ids.append(id)
+
+        if correct_label in retrieved_ids:
+            pos = retrieved_ids.index(correct_label) + 1
+        else:
+            pos = None
+        positions.append(pos)
 
     # Plot data
     top_k = 15
