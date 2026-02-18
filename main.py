@@ -194,11 +194,23 @@ def main(cab, k, feat, kernel, c, path_train, dir_name, config, test_step):
 
             else:
                 print(f"\nSVM prediction is unsure: prediction={prediction} vs. STS={top1.metadata['id']} and confidence = {confidence}")
-                feedback = hitl_ui(prediction, confidence)
+                feedback = hitl_ui(prediction, confidence, persistent_dir_cabx, path_train)
 
                 if feedback["status"] == "incorrect" and feedback["correct_label"]:
                     # Save correct label in training excel
-                    save_fedback_to_excel(file_path=path_train, correct_label=feedback["correct_label"])
+                    save_fedback_to_excel(train_path=path_train, text=test_step, cab=cab, correct_label=feedback["correct_label"])
+                    prediction = feedback["correct_label"]
+                    print(f"\nCorrected SVM prediction: {prediction}")
+
+                elif feedback["status"] == "retrain":
+                    #x, y, y_sts, sts_time, sts_mem, dim = get_traindata(path_train,[persistent_dir_cab1, persistent_dir_cab2], embedding_model, k, feat)
+                    #train_svm(x, y, svm_dir)
+
+                    # Clear "new" column
+                    df = pd.read_excel(path_train, engine="openpyxl")
+                    df["New"] = ""
+                    df.to_excel(path_train, index=False)
+
                 else:
                     # no action, canceled/correct prediction
                     pass
@@ -247,10 +259,10 @@ else:
     # Interface parameters
     cab_x = "cab1"
     config_x = "predict"
-    test_step_x = "Switch on the battery"
+    test_step_x = "Switch the battery on using the pushbutton on rearwall"
 
     # Paths
     dir_train = Path(os.path.join(os.path.dirname(os.path.abspath(__file__)), "Train data"))
     path_train = dir_train.joinpath(dir_train, f"TRAXX_{project}_Training_allCabs_{class_x}class_cnt{cnt}.xlsx")
 
-    main(cab_x, k = 5, feat = 9, kernel = "linear", c = 10, path_train = path_train, dir_name = "", config = config_x, test_step = test_step_x)
+    prediction = main(cab_x, k = 5, feat = 9, kernel = "linear", c = 10, path_train = path_train, dir_name = "", config = config_x, test_step = test_step_x)

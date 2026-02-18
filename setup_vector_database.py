@@ -3,7 +3,6 @@ import chromadb
 
 from langchain_chroma import Chroma
 
-
 ######################################################
 
 def calc_similarity(test_step, persistent_dir, embedding_model, k):
@@ -52,3 +51,17 @@ def edit_vector_db(docs, store_name, persistent_dir, embedding_model):
 
         print(f"--- Finished updating vector db {store_name} ---")
 
+
+def get_all_classes(persistent_dir):
+
+    chroma_client = chromadb.PersistentClient(path=persistent_dir)
+    collection = chroma_client.get_collection(name="langchain")
+    metadatas = collection.get(include=["metadatas"])
+    meta_key = "id"
+
+    classes = []
+    for md in metadatas["metadatas"]:
+        if meta_key in md:
+            classes.append(md[meta_key])
+
+    return classes
