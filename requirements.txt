@@ -1,0 +1,16 @@
+matplotlib
+numpy
+seaborn
+psutil
+scikit-learn==1.7.0
+Pillow
+chromadb
+Pandas
+joblib
+langchain
+langchain-chroma
+langchain-core
+langchain-community
+langchain-huggingface
+sentence-transformers
+openpyxl
