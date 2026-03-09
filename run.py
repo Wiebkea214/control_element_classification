@@ -17,7 +17,7 @@ if __name__ == "__main__":
     test_step = args.test_step
     config = args.config
     #cab = "cab1"
-    #test_step = "Move the TBC to position B+"
+    test_step = "Occupy ca1"
     #config = "train_svm_only"
     print(f"cab: {cab}, test_step: {test_step}, config: {config}")
 

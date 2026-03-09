@@ -24,9 +24,6 @@ def main(cab, k, feat, kernel, c, path_train, dir_name, config, test_step):
     path_bmv_cab1 = bmv_dir / "BMV_Labels_cab1_14class.xlsx"
     path_bmv_cab2 = bmv_dir / "BMV_Labels_cab2_14class.xlsx"
 
-    # SVM
-    svm_dir = base_dir / "SVM Models"
-
     # Evaluation
     evaluation_dir = base_dir / "Evaluation"
     gather_path = evaluation_dir / "Evaluation auto"
@@ -38,20 +35,17 @@ def main(cab, k, feat, kernel, c, path_train, dir_name, config, test_step):
     persistent_dir_cab2 = str(base_dir / "chroma_db_cab2")
 
     # Sentence Transformer
-    model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-    model_path = str(base_dir/"Sentence Transformer"/"all-MiniLM-L6-v2")
+    model_path = str(base_dir / "Sentence Transformer" / "all-MiniLM-L6-v2")
+    if not os.path.exists(model_path):
+        model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        model.save(model_path)
 
-    if os.path.exists(model_path):
-        embedding_model = HuggingFaceEmbeddings(model_name=model_path)
+    embedding_model = HuggingFaceEmbeddings(model_name=model_path)
 
-    ######################## Main ###############################
-
-    # Save sentence transformer locally
-    if "save_transformer" in config:
-        model.save(str(base_dir / "Sentence Transformer"))
+    ######################## Main ##############################
 
     # Preprocess BMV and edit vektor-database
-    if "edit_db" in config:
+    if "edit_db" in config or not Path(persistent_dir_cab1).exists() or not Path(persistent_dir_cab2).exists():
         docs_bmv_cab1 = get_BMV(path_bmv_cab1)
         docs_bmv_cab2 = get_BMV(path_bmv_cab2)
 
@@ -60,9 +54,7 @@ def main(cab, k, feat, kernel, c, path_train, dir_name, config, test_step):
         edit_vector_db(docs_bmv_cab2, "chroma_db_cab2", persistent_dir_cab2, embedding_model)
 
     # Preprocess FTS for STS-analysis (not part of normal operation)
-    dict_fts = {}
     path_fts = base_dir / "Train data" / ""
-
     if "load_fts" in config and path_fts.exists():
 
         dict_fts = get_FTS(path_fts)
@@ -93,7 +85,7 @@ def main(cab, k, feat, kernel, c, path_train, dir_name, config, test_step):
         x, y, y_sts, sts_time, sts_mem, dim = get_traindata(path_train,[persistent_dir_cab1, persistent_dir_cab2], embedding_model, k, feat)
 
         if "train_svm_only" in config:
-            train_svm(x, y, svm_dir)
+            train_svm(x, y, base_dir)
 
         if "evaluate_model" in config:
             # SVM analysis

@@ -55,7 +55,7 @@ def get_traindata(path_train, persistent_dir, embedding, k, feat):
     return x, y, y_sts, sts_time, sts_mem, dim
 
 
-def train_svm(x, y, svm_dir):
+def train_svm(x, y, base_dir):
     print("\n--- Start training of SVM ---")
     encoder = LabelEncoder()
     scaler = StandardScaler()
@@ -80,12 +80,11 @@ def train_svm(x, y, svm_dir):
     svm.fit(x_train_scaled, y_train_str)
 
     # Save model
-    save_model_path = svm_dir / f"svm_model_allCabs_{time_now}.joblib"
-    save_encoder_path = svm_dir / f"encoder_allCabs_{time_now}.joblib"
+    save_model_path = base_dir / "SVM Models" / f"svm_model_allCabs_{time_now}.joblib"
     joblib.dump(svm, save_model_path)
 
-    joblib.dump(svm, f"svm_model.joblib")
-    joblib.dump(encoder, f"encoder.joblib")
+    joblib.dump(svm, base_dir / "svm_model.joblib")
+    joblib.dump(encoder, base_dir / "encoder.joblib")
     print("\n--- Finished training and saving of SVM ---")
 
     # Validate
