@@ -86,7 +86,7 @@ def analysis_cpu_usage(interval, train_start, train_end, pred_start, pred_end, c
     plt.ylabel("CPU-load (%)")
     plt.grid(True)
     plt.legend()
-    plt.savefig(path_dir / "cpu_usage.png", bbox_inches="tight")
+    plt.savefig(path_dir/"cpu_usage.png", bbox_inches="tight")
     plt.close()
 
 
@@ -112,7 +112,7 @@ def analysis_performance(y_test, y_pred, encoder, path_dir):
     plt.ylabel("Value")
     plt.title("Precision, Recall and F1 per class", fontsize=title_size)
     plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
-    plt.savefig(path_dir / "performance.png", bbox_inches="tight")
+    plt.savefig(path_dir/"performance.png", bbox_inches="tight")
     plt.close()
 
 
@@ -131,7 +131,7 @@ def analysis_conf_matrix(y_test, y_pred, encoder, path_dir, filename):
     plt.title("Confusion Matrix", fontsize=title_size)
     plt.xlabel("Predicted classes")
     plt.ylabel("True classes")
-    plt.savefig(path_dir / filename, bbox_inches="tight")
+    plt.savefig(path_dir/filename, bbox_inches="tight")
     plt.close()
 
 
@@ -152,7 +152,7 @@ def analysis_learning(train_sizes, train_scores, test_scores, path_dir):
     plt.xlabel("Training Size")
     plt.ylabel("Accuracy")
     plt.legend()
-    plt.savefig(path_dir / "learning_curve.png", bbox_inches="tight")
+    plt.savefig(path_dir/"learning_curve.png", bbox_inches="tight")
     plt.close()
 
 
@@ -227,7 +227,7 @@ def analysis_kernels(x, y, path_dir):
 
     plt.grid(axis="y", linestyle="--", alpha=0.6)
     plt.tight_layout()
-    plt.savefig(path_dir / f"vergleich_allCabs_kernel_analysis.png", bbox_inches="tight")
+    plt.savefig(path_dir/f"vergleich_allCabs_kernel_analysis.png", bbox_inches="tight")
     plt.close()
 
 
@@ -287,5 +287,5 @@ def analysis_sts(path_dir, path_train, embedding, persistent_dir):
     plt.xlabel("Trefferposition")
     plt.ylabel("Anzahl")
     plt.tight_layout()
-    plt.savefig(path_dir / f"vergleich_allCabs__sts_analysis.png", bbox_inches="tight")
+    plt.savefig(path_dir/f"vergleich_allCabs__sts_analysis.png", bbox_inches="tight")
     plt.close()

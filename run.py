@@ -13,12 +13,15 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Interface Input
-    cab = args.cab
-    test_step = args.test_step
-    config = args.config
-    #cab = "cab1"
-    #test_step = "Occupy ca1"
-    #config = "train_svm_only"
+    if 0:
+        cab = args.cab
+        test_step = args.test_step
+        config = args.config
+    else:
+        cab = "cab1"
+        test_step = "Occupy cab1"
+        config = "evaluate_manually"
+
     print(f"cab: {cab}, test_step: {test_step}, config: {config}")
 
     # Training values

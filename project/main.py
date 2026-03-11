@@ -5,6 +5,7 @@ from project.functions__training_svm import *
 from project.functions__gather_information import *
 from project.functions__feature_vector import *
 from project.functions__human_in_the_loop import *
+from project.functions__prediction import *
 
 from datetime import datetime
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -28,7 +29,7 @@ def main(cab, k, feat, kernel, c, path_train, dir_name, config, test_step):
     evaluation_dir = base_dir / "Evaluation"
     gather_path = evaluation_dir / "Evaluation auto"
     top_k_path = evaluation_dir / "Evaluation Top-k"
-    eval_dir = str(evaluation_dir / "Evaluation auto" / dir_name)
+    eval_dir = evaluation_dir / "Evaluation auto" / dir_name
 
     #Vector Database
     persistent_dir_cab1 = str(base_dir / "chroma_db_cab1")
@@ -102,7 +103,7 @@ def main(cab, k, feat, kernel, c, path_train, dir_name, config, test_step):
             report = ""
 
             for i in range(1):
-                svm_acc, report, train_time, pred_time, mem_train, mem_pred, cross_val, r = evaluate_svm(x, y, eval_dir, kernel, c)
+                svm_acc, report, train_time, pred_time, mem_train, mem_pred, cross_val, r = evaluate_svm(x, y, eval_dir, base_dir, kernel, c)
                 data["cross_val"].append(cross_val)
                 data["svm_val"].append(svm_acc)
                 data["train_time"].append(train_time)
@@ -145,6 +146,31 @@ def main(cab, k, feat, kernel, c, path_train, dir_name, config, test_step):
         if "evaluate_sts" in config:
             analysis_sts(gather_path, path_train, embedding_model, [persistent_dir_cab1, persistent_dir_cab2])
 
+
+    # Manual evaluation
+    if "evaluate_manually" in config:
+        reader = pd.read_excel(path_train, engine='openpyxl')
+        reader = reader.fillna("")
+        y_label = []
+        y_svm = []
+        conf = []
+
+        for i, line in reader.iterrows():
+            text = line["Text"]
+            element_label = line["Label"]
+            cabin = line["Cab"]
+            element_predict, confidence = predict_element(cabin, text, k, feat, base_dir, path_train, persistent_dir_cab1,
+                                              persistent_dir_cab2,
+                                              embedding_model, ui=False)
+            y_label.append(element_label)
+            y_svm.append(element_predict)
+            conf.append(confidence)
+
+        analysis_conf_matrix(y_label, y_svm, encoder=0, path_dir=eval_dir, filename="confusion_matrix_manuelSVM.png")
+        svm_report = classification_report(y_label, y_svm)
+        print(f"SVM manual report:\n {svm_report}")
+
+
     # Gather information for evaluation
     if "gather_information" in config:
         if "log" in config:
@@ -166,55 +192,7 @@ def main(cab, k, feat, kernel, c, path_train, dir_name, config, test_step):
     # Normal operation prediction
     prediction = ""
     if "predict" in config:
-        # Check if element nr. is used in test step
-        persistent_dir_cabx = select_cab(cab, [persistent_dir_cab1, persistent_dir_cab2])
-        prediction = element_precheck(test_step, persistent_dir_cabx)
-
-        # If not, perform classification
-        if prediction:
-            print(f"\nElement found in test step: {prediction}")
-        else:
-            svm_model = joblib.load(base_dir / "svm_model.joblib")
-            features, top1, dim, sts_time, sts_mem = build_feature_vector(embedding_model, [persistent_dir_cab1, persistent_dir_cab2], test_step, cab, k, feat)
-
-            prediction = svm_model.predict([features])[0]
-
-            # Confidence
-            scores = svm_model.decision_function([features])[0]
-            softmax = np.exp(scores) / np.sum(np.exp(scores))
-            confidence = softmax.max()
-
-            # Human-in-the-Loop
-            if (top1.metadata["id"] == prediction) and confidence >= 0.5:
-                print(f"\nSVM prediction is valid: {prediction}")
-
-            else:
-                print(f"\nSVM prediction is unsure: prediction={prediction} vs. STS={top1.metadata['id']} and confidence = {confidence}")
-                feedback = hitl_ui(prediction, confidence, persistent_dir_cabx, path_train, test_step)
-
-                if feedback["status"] == "incorrect_excel" and feedback["correct_label"]:
-                    # Save correct label in training excel
-                    save_fedback_to_excel(train_path=path_train, text=test_step, cab=cab, correct_label=feedback["correct_label"])
-                    prediction = feedback["correct_label"]
-                    print(f"\nCorrected SVM prediction: {prediction} (Added to training db)")
-
-                if feedback["status"] == "incorrect" and feedback["correct_label"]:
-                    # Do not save label in training excel
-                    prediction = feedback["correct_label"]
-                    print(f"\nCorrected SVM prediction: {prediction} (not added to training db because of duplicate)")
-
-                elif feedback["status"] == "retrain":
-                    x, y, y_sts, sts_time, sts_mem, dim = get_traindata(path_train,[persistent_dir_cab1, persistent_dir_cab2], embedding_model, k, feat)
-                    train_svm(x, y, svm_dir)
-
-                    # Clear "new" column
-                    df = pd.read_excel(path_train, engine="openpyxl")
-                    df["New"] = ""
-                    df.to_excel(path_train, index=False)
-
-                else:
-                    # no action, canceled/correct prediction
-                    pass
+        prediction, confidence = predict_element(cab, test_step, k, feat, base_dir, path_train, persistent_dir_cab1, persistent_dir_cab2, embedding_model, ui=True)
 
     plt.close()
     print(prediction)

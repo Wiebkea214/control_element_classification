@@ -84,7 +84,7 @@ def train_svm(x, y, base_dir):
     joblib.dump(svm, save_model_path)
 
     joblib.dump(svm, base_dir / "svm_model.joblib")
-    joblib.dump(encoder, base_dir / "encoder.joblib")
+    joblib.dump(scaler, base_dir / "scaler.joblib")
     print("\n--- Finished training and saving of SVM ---")
 
     # Validate
@@ -96,18 +96,21 @@ def train_svm(x, y, base_dir):
     print(report)
 
 
-def evaluate_svm(x, y, eval_dir, kernel, c):
+def evaluate_svm(x, y, eval_dir, base_dir, kernel, c):
     print("\n--- Start training of SVM ---")
     encoder = LabelEncoder()
     scaler = StandardScaler()
-    time_now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
     # Split training and test data
     x_train, x_test, y_train_str, y_test_str = train_test_split(x, y, test_size=0.2, random_state=42, stratify=y)
 
+    # Encoding
     encoder.fit(y_train_str)
-    y_test_num = encoder.transform(y_test_str)
     y_train_num = encoder.transform(y_train_str)
+    y_test_num = encoder.transform(y_test_str)
+
+    # Scaling
+    scaler.fit(x_train)
     x_train_scaled = scaler.fit_transform(x_train)
     x_test_scaled = scaler.transform(x_test)
 
@@ -153,8 +156,8 @@ def evaluate_svm(x, y, eval_dir, kernel, c):
 
     # Prediction with test data
     print("\n--- Start evaluation of model with test data ---")
-    y_score = svm.decision_function(x_test_scaled)
-    y_pred = np.argmax(y_score, axis=1)
+    y_pred = svm.predict(x_test_scaled)
+    y_pred_num = encoder.transform(y_pred)
 
     ############## Training evaluation ##########################################
     pred_end = time.perf_counter()
@@ -162,8 +165,8 @@ def evaluate_svm(x, y, eval_dir, kernel, c):
     time.sleep(delay)
     stop_event.set()
     monitor_thread.join()
-    acc = accuracy_score(y_test_num, y_pred)
-    report = classification_report(y_test_num, y_pred, zero_division=0, target_names=encoder.classes_)
+    acc = accuracy_score(y_test_num, y_pred_num)
+    report = classification_report(y_test_str, y_pred, zero_division=0, target_names=encoder.classes_)
     train_sizes, train_scores, test_scores = learning_curve(SVC(kernel='linear'), x, y, cv=5,
                                                             train_sizes=np.linspace(0.1, 1.0, 10))
     train_time = train_end - train_start
@@ -181,9 +184,12 @@ def evaluate_svm(x, y, eval_dir, kernel, c):
     cross_val = np.mean(cross_val_score(svm, x_train_scaled, y_train_str, cv=5))
     r = 0 #permutation_importance(svm, x_train_scaled, y_train_str, n_repeats=30, random_state=0)
     analysis_cpu_usage(interval, train_start, train_end, pred_start, pred_end, cpu_start, cpu_usage, timestamps, eval_dir)
-    analysis_performance(y_test_num, y_pred, encoder, eval_dir)
-    analysis_conf_matrix(y_test_num, y_pred, encoder, eval_dir, "confusion_matrix_svm.png")
+    analysis_performance(y_test_num, y_pred_num, encoder, eval_dir)
+    analysis_conf_matrix(y_test_num, y_pred_num, encoder, eval_dir, "confusion_matrix_svm.png")
     analysis_learning(train_sizes, train_scores, test_scores, eval_dir)
     ###################################################################################
+
+    joblib.dump(scaler, base_dir / "scaler.joblib")
+    joblib.dump(svm, base_dir / "svm_model.joblib")
 
     return acc, report, train_time, pred_time, mem_train, mem_pred, cross_val, r
