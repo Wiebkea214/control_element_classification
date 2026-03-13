@@ -157,7 +157,6 @@ def evaluate_svm(x, y, eval_dir, base_dir, kernel, c):
     # Prediction with test data
     print("\n--- Start evaluation of model with test data ---")
     y_pred = svm.predict(x_test_scaled)
-    y_pred_num = encoder.transform(y_pred)
 
     ############## Training evaluation ##########################################
     pred_end = time.perf_counter()
@@ -165,6 +164,8 @@ def evaluate_svm(x, y, eval_dir, base_dir, kernel, c):
     time.sleep(delay)
     stop_event.set()
     monitor_thread.join()
+
+    y_pred_num = encoder.transform(y_pred)
     acc = accuracy_score(y_test_num, y_pred_num)
     report = classification_report(y_test_str, y_pred, zero_division=0, target_names=encoder.classes_)
     train_sizes, train_scores, test_scores = learning_curve(SVC(kernel='linear'), x, y, cv=5,
@@ -190,6 +191,6 @@ def evaluate_svm(x, y, eval_dir, base_dir, kernel, c):
     ###################################################################################
 
     joblib.dump(scaler, base_dir / "scaler.joblib")
-    #joblib.dump(svm, base_dir / "svm_model.joblib")
+    joblib.dump(svm, base_dir / "SVM Models" / f"svm_model_Xclass.joblib")
 
     return acc, report, train_time, pred_time, mem_train, mem_pred, cross_val, r

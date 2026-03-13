@@ -149,26 +149,39 @@ def main(cab, k, feat, kernel, c, path_train, dir_name, config, test_step):
 
     # Manual evaluation
     if "evaluate_manually" in config:
+        class_nr = 4
+        model_path = str(base_dir / "SVM Models" / f"svm_model_{class_nr}class.joblib")
+        embedding_model = HuggingFaceEmbeddings(model_name=model_path)
         reader = pd.read_excel(path_train, engine='openpyxl')
         reader = reader.fillna("")
         y_label = []
         y_svm = []
+        y_time = []
         conf = []
 
         for i, line in reader.iterrows():
+            predict_start = time.perf_counter()
             text = line["Text"]
             element_label = line["Label"]
             cabin = line["Cab"]
             element_predict, confidence = predict_element(cabin, text, k, feat, base_dir, path_train, persistent_dir_cab1,
                                               persistent_dir_cab2,
                                               embedding_model, ui=False)
+            predict_end = time.perf_counter()
+            y_time.append(predict_end - predict_start)
             y_label.append(element_label)
             y_svm.append(element_predict)
             conf.append(confidence)
 
         analysis_conf_matrix(y_label, y_svm, encoder=0, path_dir=eval_dir, filename="confusion_matrix_manuelSVM.png")
         svm_report = classification_report(y_label, y_svm)
-        print(f"SVM manual report:\n {svm_report}")
+        txt = (f"Mean prediction time: {y_time.mean}\n"
+              f"SVM manual report:\n {svm_report}")
+
+        with open(eval_dir / f"evaluation_log_{class_nr}class.txt", "w", encoding="utf-8") as f:
+            f.write("\n".join(txt))
+
+        print(txt)
 
 
     # Gather information for evaluation
