@@ -20,7 +20,7 @@ if __name__ == "__main__":
     else:
         cab = "cab1"
         test_step = "Occupy cab1"
-        config = "evaluate_manually"
+        config = "predict"
 
     print(f"cab: {cab}, test_step: {test_step}, config: {config}")
 

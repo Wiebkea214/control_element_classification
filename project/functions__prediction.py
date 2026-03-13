@@ -28,7 +28,7 @@ def predict_element(cab, test_step, k, feat, base_dir, path_train, persistent_di
         # Confidence
         scores = svm_model.decision_function(features_scaled)[0]
         softmax = np.exp(scores) / np.sum(np.exp(scores))
-        confidence = softmax.max()
+        confidence = 0.3#softmax.max()
 
         # Human-in-the-Loop
         if ui:

@@ -174,7 +174,7 @@ def main(cab, k, feat, kernel, c, path_train, dir_name, config, test_step):
     # Gather information for evaluation
     if "gather_information" in config:
         if "log" in config:
-            keyword = "cnt150"
+            keyword = "cnt250"
             addition = ""
             gather_pictures(keyword, addition, gather_path)
             gather_log(keyword, "cross validation score", addition, gather_path)

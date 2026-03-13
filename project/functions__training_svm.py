@@ -190,6 +190,6 @@ def evaluate_svm(x, y, eval_dir, base_dir, kernel, c):
     ###################################################################################
 
     joblib.dump(scaler, base_dir / "scaler.joblib")
-    joblib.dump(svm, base_dir / "svm_model.joblib")
+    #joblib.dump(svm, base_dir / "svm_model.joblib")
 
     return acc, report, train_time, pred_time, mem_train, mem_pred, cross_val, r

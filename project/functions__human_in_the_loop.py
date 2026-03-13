@@ -155,8 +155,8 @@ def hitl_ui(pred_label, confidence, persistent_dir, train_path, test_step):
     correct_btn = tk.Button(btn_row, text="Correkt", width=12, command=on_correct)
     wrong_btn = tk.Button(btn_row, text="Wrong", width=12, command=on_wrong)
     retrain_btn = tk.Button(btn_row, text="Retrain", width=12, command=on_retrain)
-    wrong_btn.pack(side="left", padx=(0, 6))
     correct_btn.pack(side="left")
+    wrong_btn.pack(side="left", padx=(10, 0))
     retrain_btn.pack(side="right")
 
     # ESC close as cancel
