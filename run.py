@@ -13,7 +13,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Interface Input
-    if 0:
+    if 1:
         cab = args.cab
         test_step = args.test_step
         config = args.config
@@ -51,7 +51,8 @@ In prototype:
         str(python),
         str(entrypoint),
         "--cab", cab, 
-        "--test_step", test_step
+        "--test_step", test_step,
+        "--config", config
         ]
     result = subprocess.run(cmd)
     element_name = result.stdout.strip().splitlines()[-1] if result else None

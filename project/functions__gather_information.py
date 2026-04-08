@@ -184,7 +184,7 @@ def gather_log(keyword, search_string, addition, root):
                 pass
         paths = paths_filtered
 
-    plot_values_from_files(paths, search_string, save_path=root / f"vergleich_allCabs_{addition}_{search_string}")
+        plot_values_from_files(paths, search_string, save_path=root / f"vergleich_allCabs_{addition}_{search_string}")
 
 
 def gather_top_k(root):

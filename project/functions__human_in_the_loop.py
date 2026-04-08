@@ -27,7 +27,7 @@ def save_fedback_to_excel(train_path, text, cab, correct_label):
     combined.to_excel(train_path, index=False, engine="openpyxl")
 
 
-def hitl_ui(pred_label, confidence, persistent_dir, train_path, test_step):
+def hil_ui(pred_label, confidence, persistent_dir, train_path, test_step):
 
     df = pd.read_excel(train_path, engine="openpyxl")
     new_cnt = df["New"].count()

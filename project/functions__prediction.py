@@ -10,6 +10,7 @@ def predict_element(cab, test_step, k, feat, base_dir, path_train, persistent_di
     persistent_dir_cabx = select_cab(cab, [persistent_dir_cab1, persistent_dir_cab2])
     prediction = element_precheck(test_step, persistent_dir_cabx)
     confidence = 1
+    conf_threshold = 0.6
 
     # If not, perform classification
     if prediction:
@@ -28,16 +29,16 @@ def predict_element(cab, test_step, k, feat, base_dir, path_train, persistent_di
         # Confidence
         scores = svm_model.decision_function(features_scaled)[0]
         softmax = np.exp(scores) / np.sum(np.exp(scores))
-        confidence = 0.3#softmax.max()
+        confidence = softmax.max()
 
         # Human-in-the-Loop
         if ui:
-            if (top1.metadata["id"] == prediction) and confidence >= 0.5:
+            if (top1.metadata["id"] == prediction) and confidence >= conf_threshold:
                 print(f"\nSVM prediction is valid: {prediction}")
 
             else:
                 print(f"\nSVM prediction is unsure: prediction={prediction} vs. STS={top1.metadata['id']} and confidence = {confidence}")
-                feedback = hitl_ui(prediction, confidence, persistent_dir_cabx, path_train, test_step)
+                feedback = hil_ui(prediction, confidence, persistent_dir_cabx, path_train, test_step)
 
                 if feedback["status"] == "incorrect_excel" and feedback["correct_label"]:
                     # Save correct label in training excel

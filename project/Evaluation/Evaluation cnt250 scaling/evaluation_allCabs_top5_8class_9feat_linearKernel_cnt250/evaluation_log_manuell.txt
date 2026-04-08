@@ -1,0 +1,16 @@
+Mean prediction time: 592.14 ms
+SVM manual report:
+               precision    recall  f1-score   support
+
+     -GC.S01       0.98      0.99      0.99       250
+     -GC.S02       1.00      1.00      1.00       250
+     -GC.S03       0.99      0.99      0.99       250
+     -GC.S04       1.00      1.00      1.00       250
+     -HC.S01       0.98      0.98      0.98       250
+     -HC.S02       0.99      1.00      1.00       250
+     -HC.S03       0.98      0.98      0.98       250
+     -HC.S04       1.00      0.99      1.00       250
+
+    accuracy                           0.99      2000
+   macro avg       0.99      0.99      0.99      2000
+weighted avg       0.99      0.99      0.99      2000

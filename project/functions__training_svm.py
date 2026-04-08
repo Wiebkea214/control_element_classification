@@ -190,7 +190,7 @@ def evaluate_svm(x, y, eval_dir, base_dir, kernel, c):
     analysis_learning(train_sizes, train_scores, test_scores, eval_dir)
     ###################################################################################
 
-    joblib.dump(scaler, base_dir / "scaler.joblib")
-    joblib.dump(svm, base_dir / "SVM Models" / f"svm_model_Xclass.joblib")
+    #joblib.dump(scaler, base_dir / "scaler.joblib")
+    #joblib.dump(svm, base_dir / "SVM Models" / f"svm_model_Xclass.joblib")
 
     return acc, report, train_time, pred_time, mem_train, mem_pred, cross_val, r
